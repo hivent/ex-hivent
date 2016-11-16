@@ -30,7 +30,8 @@ defmodule Hivent.Mixfile do
     [
       { :exredis, ">= 0.2.4" },
       { :uuid, "~> 1.1" },
-      { :poison, "~> 2.0" }
+      { :poison, "~> 2.0" },
+      { :credo, "~> 0.4", only: [:dev, :test] }
     ]
   end
 end

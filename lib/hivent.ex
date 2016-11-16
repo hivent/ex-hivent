@@ -1,4 +1,8 @@
 defmodule Hivent do
+  @moduledoc """
+  The main Hivent module.
+  """
+
   import Exredis.Script
 
   defredis_script :produce, file_path: "lib/hivent/lua/producer.lua"

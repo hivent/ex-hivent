@@ -11,4 +11,7 @@ config :hivent,
 
   client_id: "my_app"
 
-import_config "#{Mix.env}.exs"
+env_config = Path.expand("#{Mix.env}.exs", __DIR__)
+if File.exists?(env_config) do
+  import_config(env_config)
+end
