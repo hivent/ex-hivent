@@ -1,39 +1,26 @@
 defmodule Hivent do
   @moduledoc """
-  The main Hivent module.
+  The main Hivent application. It starts an Agent that holds a persistent
+  connection to the Redis backend.
   """
+  use Application
 
-  import Exredis.Script
+  def start(_type, _args) do
+    Agent.start_link fn -> initial_state end, name: __MODULE__
+  end
 
-  defredis_script :produce, file_path: "lib/hivent/lua/producer.lua"
+  def emit(name, payload, options) do
+    redis
+    |> Hivent.Producer.emit(name, payload, options)
+  end
 
-  def emit(name, payload, options \\ %{cid: UUID.uuid4(:hex), version: 1, key: 1}) do
-    message = build_message(name, payload, options[:cid], options[:version])
+  defp initial_state do
+    {:ok, client} = Hivent.Redis.start_link :hivent_redis, Hivent.Config.get(:hivent, :endpoint)
 
-    redis |> produce([], [name, message, options[:key]])
-
-    {:ok}
+    %{redis: client}
   end
 
   defp redis do
-    Exredis.start_using_connection_string Hivent.Config.get(:hivent, :endpoint)
-  end
-
-  defp build_message(name, payload, cid, version) do
-    %{
-      payload: payload,
-      meta:    meta_data(name, cid, version)
-    } |> Poison.Encoder.encode([])
-  end
-
-  defp meta_data(name, cid, version) do
-    %{
-      uuid:       UUID.uuid4(:hex),
-      name:       name,
-      version:    version,
-      cid:        cid,
-      producer:   Hivent.Config.get(:hivent, :client_id),
-      created_at: DateTime.utc_now() |> DateTime.to_iso8601
-    }
+    Agent.get(__MODULE__, &Map.get(&1, :redis))
   end
 end
