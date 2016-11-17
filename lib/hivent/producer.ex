@@ -4,6 +4,9 @@ defmodule Hivent.Producer do
   """
 
   import Exredis.Script
+  use Timex
+  alias Hivent.Event
+  alias Event.Meta
 
   defredis_script :produce, file_path: "lib/hivent/lua/producer.lua"
 
@@ -17,7 +20,7 @@ defmodule Hivent.Producer do
   end
 
   defp build_message(name, payload, cid, version) do
-    %{
+    %Event{
       payload: payload,
       meta:    meta_data(name, cid, version)
     }
@@ -25,13 +28,13 @@ defmodule Hivent.Producer do
   end
 
   defp meta_data(name, cid, version) do
-    %{
+    %Meta{
       uuid:       UUID.uuid4(:hex),
       name:       name,
       version:    version,
       cid:        cid,
       producer:   Hivent.Config.get(:hivent, :client_id),
-      created_at: DateTime.utc_now() |> DateTime.to_iso8601
+      created_at: Timex.now |> DateTime.to_iso8601
     }
   end
 end
