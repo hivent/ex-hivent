@@ -41,5 +41,4 @@ defmodule Hivent.Heartbeat do
   defp schedule(interval) do
     Process.send_after(self(), :beat, interval)
   end
-
 end
