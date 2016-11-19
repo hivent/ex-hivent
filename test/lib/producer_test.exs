@@ -1,7 +1,7 @@
-defmodule HiventProducerTest do
+defmodule HiventEmitterTest do
   use ExUnit.Case
   use Timex
-  doctest Hivent.Producer
+  doctest Hivent.Emitter
 
   @signal "my_topic"
   @service_name "a_service"
@@ -18,7 +18,7 @@ defmodule HiventProducerTest do
     redis |> Exredis.Api.sadd(@signal, @service_name)
     redis |> Exredis.Api.set("#{@service_name}:partition_count", partition_count)
 
-    Hivent.Producer.emit(redis, @signal, "foobar",
+    Hivent.Emitter.emit(redis, @signal, "foobar",
       %{version: @version, cid: "91dn1dn982d8921dasdads", key: 12345}
     )
 
