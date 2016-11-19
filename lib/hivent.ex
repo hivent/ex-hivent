@@ -17,7 +17,7 @@ defmodule Hivent do
 
   def emit(name, payload, options) do
     redis
-    |> Hivent.Producer.emit(name, payload, options)
+    |> Hivent.Emitter.emit(name, payload, options)
   end
 
   def redis do

@@ -1,6 +1,6 @@
-defmodule Hivent.Producer do
+defmodule Hivent.Emitter do
   @moduledoc """
-  The Hivent Producer module. It emits signals into a Redis backend using a Lua script.
+  The Hivent Emitter module. It emits signals into a Redis backend using a Lua script.
   """
 
   import Exredis.Script
