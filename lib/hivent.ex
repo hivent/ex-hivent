@@ -6,7 +6,13 @@ defmodule Hivent do
   use Application
 
   def start(_type, _args) do
-    Agent.start_link fn -> initial_state end, name: __MODULE__
+    import Supervisor.Spec, warn: false
+
+    children = [
+      worker(Hivent.Redis, [:redis, Hivent.Config.get(:hivent, :endpoint)]),
+    ]
+
+    Supervisor.start_link(children, strategy: :one_for_one, name: Hivent)
   end
 
   def emit(name, payload, options) do
@@ -14,13 +20,7 @@ defmodule Hivent do
     |> Hivent.Producer.emit(name, payload, options)
   end
 
-  defp initial_state do
-    {:ok, client} = Hivent.Redis.start_link :hivent_redis, Hivent.Config.get(:hivent, :endpoint)
-
-    %{redis: client}
-  end
-
-  defp redis do
-    Agent.get(__MODULE__, &Map.get(&1, :redis))
+  def redis do
+    Process.whereis(:redis)
   end
 end

@@ -2,7 +2,7 @@ defmodule HiventTest do
   use ExUnit.Case
 
   setup do
-    redis = Agent.get(Hivent, &Map.get(&1, :redis))
+    redis = Process.whereis(:redis)
 
     %{ redis: redis }
   end

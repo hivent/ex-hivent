@@ -9,7 +9,7 @@ defmodule HiventProducerTest do
   @cid "91dn1dn982d8921dasdads"
 
   setup do
-    redis = Agent.get(Hivent, &Map.get(&1, :redis))
+    redis = Process.whereis(:redis)
 
     redis |> Exredis.Api.flushall
 
