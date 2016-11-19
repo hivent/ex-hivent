@@ -4,7 +4,7 @@ defmodule HiventHeartbeatTest do
 
   @consumer "a_consumer"
   @dead_consumer "dead_consumer"
-  @interval 10
+  @interval 100
 
   setup do
     {:ok, pid} = Hivent.Heartbeat.start_link(@consumer, @interval)
@@ -19,9 +19,6 @@ defmodule HiventHeartbeatTest do
 
   test "keeps the consumer alive", %{redis: redis, service: service} do
     key = "#{service}:#{@consumer}:alive"
-    alive = redis |> Exredis.Api.get(key)
-
-    assert alive == "true"
 
     round(@interval * 1.5) |> Process.sleep()
 
