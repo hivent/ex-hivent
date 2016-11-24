@@ -2,12 +2,13 @@ defmodule Hivent.Event do
   @moduledoc """
   Defines a Hivent Event struct.
   """
+  @derive [Poison.Encoder]
+
   defmodule Meta do
     @moduledoc false
-    @enforce_keys [:name, :producer, :version, :cid, :uuid, :created_at]
+    @derive [Poison.Encoder]
     defstruct [:name, :producer, :version, :cid, :uuid, :created_at]
   end
 
-  @enforce_keys [:meta, :payload]
   defstruct meta: Meta.__struct__, payload: %{}
 end
