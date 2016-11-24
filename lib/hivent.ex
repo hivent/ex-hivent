@@ -15,7 +15,7 @@ defmodule Hivent do
     Supervisor.start_link(children, strategy: :one_for_one, name: Hivent)
   end
 
-  def emit(name, payload, options) do
+  def emit(name, payload, %{key: _} = options) do
     redis
     |> Hivent.Emitter.emit(name, payload, options)
   end

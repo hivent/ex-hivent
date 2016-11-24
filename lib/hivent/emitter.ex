@@ -10,11 +10,11 @@ defmodule Hivent.Emitter do
 
   defredis_script :produce, file_path: "lib/hivent/lua/producer.lua"
 
-  def emit(redis, name, payload, options \\ %{cid: UUID.uuid4(:hex), version: 1, key: 1}) do
+  def emit(redis, name, payload, %{key: key} = options) do
     message = build_message(name, payload, options[:cid], options[:version])
 
     redis
-    |> produce([], [name, message, options[:key]])
+    |> produce([], [name, message, key])
 
     {:ok}
   end
@@ -31,8 +31,8 @@ defmodule Hivent.Emitter do
     %Meta{
       uuid:       UUID.uuid4(:hex),
       name:       name,
-      version:    version,
-      cid:        cid,
+      version:    version || 1,
+      cid:        cid || UUID.uuid4(:hex),
       producer:   Hivent.Config.get(:hivent, :client_id),
       created_at: Timex.now |> DateTime.to_iso8601
     }
