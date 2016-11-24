@@ -10,20 +10,32 @@ defmodule Hivent.Consumer.ProducerTest do
   @interval 1000
 
   setup do
-    {:ok, pid} = Hivent.Consumer.Producer.start_link(@consumer, @events, @partition_count, @interval)
     redis = Process.whereis(:redis)
-
-    service = Hivent.Config.get(:hivent, :client_id)
-
     redis |> Exredis.Api.flushall
 
-    redis |> Exredis.Api.set("#{service}:partition_count", @partition_count)
+    {:ok, pid} = Hivent.Consumer.Producer.start_link(@consumer, @events, @partition_count, @interval)
 
-    redis |> Exredis.Api.sadd("my:event", service)
+    service = Hivent.Config.get(:hivent, :client_id)
 
     Hivent.Heartbeat.start_link(@consumer, @interval)
 
     [pid: pid, redis: redis, service: service]
+  end
+
+  test "initializing the consumer sets its partition_count in Redis", %{redis: redis, service: service} do
+    partition_count = redis
+    |> Exredis.Api.get("#{service}:partition_count")
+    |> String.to_integer
+
+    assert partition_count == @partition_count
+  end
+
+  test "initializing the consumer adds its service to the configured events consumer lists", %{redis: redis, service: service} do
+    assert @events
+    |> Enum.all?(fn (event) ->
+      services = Exredis.Api.smembers(redis, event)
+      Enum.member?(services, service)
+    end)
   end
 
   test "returns events when there is demand, if they exist", %{pid: producer} do
