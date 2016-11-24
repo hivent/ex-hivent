@@ -4,12 +4,13 @@ defmodule Hivent do
   connection to the Redis backend.
   """
   use Application
+  alias Hivent.{Emitter, Redis, Config}
 
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Hivent.Redis, [:redis, Hivent.Config.get(:hivent, :endpoint)]),
+      worker(Redis, [:redis, Config.get(:hivent, :endpoint)]),
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Hivent)
@@ -17,7 +18,7 @@ defmodule Hivent do
 
   def emit(name, payload, %{key: _} = options) do
     redis
-    |> Hivent.Emitter.emit(name, payload, options)
+    |> Emitter.emit(name, payload, options)
   end
 
   def redis do

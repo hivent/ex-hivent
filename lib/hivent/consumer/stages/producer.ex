@@ -3,7 +3,7 @@ defmodule Hivent.Consumer.Stages.Producer do
 
   import Exredis.Script
   alias Experimental.GenStage
-  alias Hivent.Event
+  alias Hivent.{Event, Config}
 
   use GenStage
 
@@ -15,7 +15,7 @@ defmodule Hivent.Consumer.Stages.Producer do
     config = %{
       events: events,
       consumer: consumer,
-      service: Hivent.Config.get(:hivent, :client_id),
+      service: Config.get(:hivent, :client_id),
       partition_count: partition_count,
       interval: interval
     }

@@ -4,6 +4,7 @@ defmodule Hivent.Heartbeat do
   """
   use GenServer
   import Exredis.Script
+  alias Hivent.Config
 
   defredis_script :heartbeat, file_path: "lib/hivent/lua/heartbeat.lua"
 
@@ -13,9 +14,9 @@ defmodule Hivent.Heartbeat do
   def start_link(consumer, interval \\ @default_interval) do
     GenServer.start_link(__MODULE__, %{
       consumer: consumer,
-      service: Hivent.Config.get(:hivent, :client_id),
+      service: Config.get(:hivent, :client_id),
       interval: interval
-    }, name: Hivent.Heartbeat)
+    }, name: __MODULE__)
   end
 
   def init(state) do

@@ -1,6 +1,7 @@
 defmodule Hivent.Config do
   @moduledoc """
-  This module handles fetching values from the config with some additional niceties
+  This module handles fetching values from the config with some
+  additional niceties.
   """
   @lint false
 
@@ -9,9 +10,9 @@ defmodule Hivent.Config do
   is provided.
   An optional default value can be provided if desired.
   ## Example
-      iex> {test_var, expected_value} = System.get_env |> Enum.take(1) |> List.first
+      iex> {test_var, expected} = System.get_env |> Enum.take(1) |> List.first
       ...> Application.put_env(:myapp, :test_var, {:system, test_var})
-      ...> ^expected_value = #{__MODULE__}.get(:myapp, :test_var)
+      ...> ^expected = #{__MODULE__}.get(:myapp, :test_var)
       ...> :ok
       :ok
       iex> Application.put_env(:myapp, :test_var2, 1)

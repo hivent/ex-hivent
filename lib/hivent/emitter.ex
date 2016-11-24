@@ -1,11 +1,12 @@
 defmodule Hivent.Emitter do
   @moduledoc """
-  The Hivent Emitter module. It emits signals into a Redis backend using a Lua script.
+  The Hivent Emitter module. It emits signals into a
+  Redis backend using a Lua script.
   """
 
   import Exredis.Script
   use Timex
-  alias Hivent.Event
+  alias Hivent.{Event, Config}
   alias Event.Meta
 
   defredis_script :produce, file_path: "lib/hivent/lua/producer.lua"
@@ -25,7 +26,7 @@ defmodule Hivent.Emitter do
       payload: payload,
       meta:    meta_data(name, cid, version, created_at)
     }
-    |> Poison.Encoder.encode([])
+    |> Poison.encode!
   end
 
   defp meta_data(name, cid, version, created_at) do
@@ -34,7 +35,7 @@ defmodule Hivent.Emitter do
       name:       name,
       version:    version || 1,
       cid:        cid || UUID.uuid4(:hex),
-      producer:   Hivent.Config.get(:hivent, :client_id),
+      producer:   Config.get(:hivent, :client_id),
       created_at: created_at |> DateTime.to_iso8601
     }
   end
