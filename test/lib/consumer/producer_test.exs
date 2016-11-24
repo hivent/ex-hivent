@@ -7,7 +7,7 @@ defmodule Hivent.Consumer.ProducerTest do
   @consumer "a_consumer"
   @events ["my:event"]
   @partition_count 2
-  @interval 1000
+  @interval 10_000
 
   setup do
     redis = Process.whereis(:redis)
