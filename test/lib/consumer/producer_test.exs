@@ -13,11 +13,10 @@ defmodule Hivent.Consumer.ProducerTest do
     redis = Process.whereis(:redis)
     redis |> Exredis.Api.flushall
 
+    Hivent.Heartbeat.start_link(@consumer, 100)
     {:ok, pid} = Hivent.Consumer.Producer.start_link(@consumer, @events, @partition_count, @interval)
 
     service = Hivent.Config.get(:hivent, :client_id)
-
-    Hivent.Heartbeat.start_link(@consumer, @interval)
 
     [pid: pid, redis: redis, service: service]
   end
