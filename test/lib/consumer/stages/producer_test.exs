@@ -1,8 +1,8 @@
-defmodule Hivent.Consumer.ProducerTest do
+defmodule Hivent.Consumer.Stages.ProducerTest do
   use ExUnit.Case
   alias Experimental.GenStage
 
-  doctest Hivent.Consumer.Producer
+  doctest Hivent.Consumer.Stages.Producer
 
   @consumer "a_consumer"
   @events ["my:event"]
@@ -17,7 +17,7 @@ defmodule Hivent.Consumer.ProducerTest do
     redis |> Exredis.Api.set("#{service}:#{@consumer}:alive", true)
     redis |> Exredis.Api.sadd("#{service}:consumers", @consumer)
 
-    {:ok, pid} = Hivent.Consumer.Producer.start_link(@consumer, @events, @partition_count, @interval)
+    {:ok, pid} = Hivent.Consumer.Stages.Producer.start_link(@consumer, @events, @partition_count, @interval)
 
     [pid: pid, redis: redis, service: service]
   end

@@ -1,4 +1,4 @@
-defmodule Hivent.Consumer.Producer do
+defmodule Hivent.Consumer.Stages.Producer do
   @moduledoc false
 
   import Exredis.Script
