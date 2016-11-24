@@ -10,13 +10,14 @@ defmodule Hivent.Consumer.ProducerTest do
   @interval 10_000
 
   setup do
+    service = Hivent.Config.get(:hivent, :client_id)
     redis = Process.whereis(:redis)
     redis |> Exredis.Api.flushall
 
-    Hivent.Heartbeat.start_link(@consumer, 100)
-    {:ok, pid} = Hivent.Consumer.Producer.start_link(@consumer, @events, @partition_count, @interval)
+    redis |> Exredis.Api.set("#{service}:#{@consumer}:alive", true)
+    redis |> Exredis.Api.sadd("#{service}:consumers", @consumer)
 
-    service = Hivent.Config.get(:hivent, :client_id)
+    {:ok, pid} = Hivent.Consumer.Producer.start_link(@consumer, @events, @partition_count, @interval)
 
     [pid: pid, redis: redis, service: service]
   end
@@ -39,7 +40,7 @@ defmodule Hivent.Consumer.ProducerTest do
 
   test "returns events when there is demand, if they exist", %{pid: producer} do
     Enum.each(1..@partition_count, fn (i) ->
-      Hivent.emit("my:event", "foo (#{i})", %{key: Enum.random(1..10)})
+      Hivent.emit("my:event", "foo (#{i})", %{version: 1, key: Enum.random(1..10)})
     end)
 
     event_payloads = GenStage.stream([producer])
@@ -52,7 +53,7 @@ defmodule Hivent.Consumer.ProducerTest do
 
   test "consuming events removes them from Redis", %{pid: producer, redis: redis, service: service} do
     Enum.each(1..@partition_count, fn (i) ->
-      Hivent.emit("my:event", "foo (#{i})", %{key: Enum.random(1..10)})
+      Hivent.emit("my:event", "foo (#{i})", %{version: 1, key: Enum.random(1..10)})
     end)
 
     GenStage.stream([producer]) |> Enum.take(2)
@@ -67,7 +68,7 @@ defmodule Hivent.Consumer.ProducerTest do
 
   test "failing to parse an event puts it in the hospital queue", %{pid: producer, redis: redis, service: service} do
     redis |> Exredis.Api.lpush("#{service}:0", "invalid")
-    Hivent.emit("my:event", "foo", %{key: Enum.random(1..10)})
+    Hivent.emit("my:event", "foo", %{version: 1, key: Enum.random(1..10)})
 
     GenStage.stream([producer]) |> Enum.take(1)
 

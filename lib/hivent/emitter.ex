@@ -10,8 +10,9 @@ defmodule Hivent.Emitter do
 
   defredis_script :produce, file_path: "lib/hivent/lua/producer.lua"
 
-  def emit(redis, name, payload, %{key: key} = options, created_at \\ Timex.now) do
-    message = build_message(name, payload, options[:cid], options[:version], created_at)
+  def emit(redis, name, payload, %{version: version} = options, created_at \\ Timex.now) when is_integer(version) do
+    message = build_message(name, payload, options[:cid], version, created_at)
+    key = options[:key] || :erlang.crc32(payload)
 
     redis
     |> produce([], [name, message, key])
