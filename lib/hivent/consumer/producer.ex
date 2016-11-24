@@ -37,8 +37,8 @@ defmodule Hivent.Consumer.Producer do
     new_events = config
     |> queues
     |> Stream.flat_map(&take_items!(demand, &1))
-    |> Stream.map(&parse_item!(&1))
-    |> Stream.reject(&is_nil(&1))
+    |> Stream.map(&parse_item!/1)
+    |> Stream.reject(&is_nil/1)
     |> Enum.take(demand)
 
     {:noreply, new_events, Tuple.insert_at(state, 1, events ++ new_events)}
