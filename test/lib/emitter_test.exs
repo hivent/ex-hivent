@@ -61,4 +61,34 @@ defmodule HiventEmitterTest do
 
     assert created_at == original_created_at
   end
+
+  test "emitting an event with no key derives one from the payload", %{redis: redis} do
+    redis |> Exredis.Api.set("#{@service_name}:partition_count", 2)
+
+    # Is guaranteed to hit partition 2 when used with :erlang.crc32
+    payload = "foobar"
+
+    Hivent.Emitter.emit(redis, @signal, payload,
+      %{version: @version, cid: "91dn1dn982d8921dasdads"}
+    )
+
+    item = redis
+      |> Exredis.Api.lindex("#{@service_name}:1", -1)
+
+    assert item != :undefined
+  end
+
+  test "emitting an event with no cid generates one", %{redis: redis} do
+    Exredis.Api.del(redis, "#{@service_name}:0")
+
+    Hivent.Emitter.emit(redis, @signal, "foobar",
+      %{version: @version}
+    )
+
+    item = redis
+      |> Exredis.Api.lindex("#{@service_name}:0", -1)
+      |> Poison.Parser.parse!(keys: :atoms)
+
+    assert is_bitstring(item.meta.cid)
+  end
 end
