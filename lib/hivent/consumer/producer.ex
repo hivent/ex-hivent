@@ -49,7 +49,10 @@ defmodule Hivent.Consumer.Producer do
   end
 
   defp queues(%{service: service, consumer: consumer, interval: interval}) do
-    redis |> rebalance_queues([], [service, consumer, interval])
+    case rebalance_queues(redis, [], [service, consumer, interval]) do
+      :undefined -> []
+      result -> result
+    end
   end
 
   defp take_items!(amount, queue) do
