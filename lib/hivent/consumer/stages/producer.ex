@@ -4,6 +4,7 @@ defmodule Hivent.Consumer.Stages.Producer do
   import Exredis.Script
   alias Experimental.GenStage
   alias Hivent.{Event, Config}
+  alias Hivent.Consumer.Heartbeat
 
   use GenStage
 
@@ -20,12 +21,14 @@ defmodule Hivent.Consumer.Stages.Producer do
       interval: interval
     }
 
-    GenStage.start_link(__MODULE__, {config, initial}, name: __MODULE__)
+    {:ok, _} = Heartbeat.start_link(consumer)
+
+    GenStage.start_link(__MODULE__, {config, initial})
   end
 
   def init({%{events: events, service: service, partition_count: partition_count}, _initial} = state) do
-    Enum.each(events, fn (_event) ->
-      redis |> Exredis.Api.sadd("my:event", service)
+    Enum.each(events, fn (event) ->
+      redis |> Exredis.Api.sadd(event, service)
     end)
 
     redis |> Exredis.Api.set("#{service}:partition_count", partition_count)

@@ -1,4 +1,4 @@
-defmodule Hivent.Heartbeat do
+defmodule Hivent.Consumer.Heartbeat do
   @moduledoc """
   The Hivent Heartbeat process. Keeps the current instance alive on the server.
   """

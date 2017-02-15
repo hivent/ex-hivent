@@ -1,13 +1,13 @@
-defmodule HiventHeartbeatTest do
+defmodule HiventConsumerHeartbeatTest do
   use ExUnit.Case
-  doctest Hivent.Heartbeat
+  doctest Hivent.Consumer.Heartbeat
 
   @consumer "a_consumer"
   @dead_consumer "dead_consumer"
   @interval 100
 
   setup do
-    {:ok, pid} = Hivent.Heartbeat.start_link(@consumer, @interval)
+    {:ok, pid} = Hivent.Consumer.Heartbeat.start_link(@consumer, @interval)
     redis = Process.whereis(:redis)
 
     redis |> Exredis.Api.flushall
