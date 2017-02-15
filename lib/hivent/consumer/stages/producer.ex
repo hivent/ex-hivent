@@ -75,7 +75,7 @@ defmodule Hivent.Consumer.Stages.Producer do
       {:error, _} ->
         redis |> Exredis.Api.lpush("#{queue}:dead_letter", item)
         nil
-      {:ok, parsed} -> parsed
+      {:ok, parsed} -> {parsed, queue}
     end
   end
 

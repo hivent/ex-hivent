@@ -44,11 +44,26 @@ defmodule Hivent.Consumer.Stages.ProducerTest do
     end)
 
     event_payloads = GenStage.stream([producer])
-    |> Stream.map(fn (event) -> event.payload end)
+    |> Stream.map(fn ({event, _queue}) -> event.payload end)
     |> Enum.take(@partition_count)
     |> Enum.sort
 
     assert event_payloads == ["foo (1)", "foo (2)"]
+  end
+
+  test "returns the queue for each event when there is demand, if events exist", %{pid: producer} do
+    Enum.each(1..@partition_count, fn (i) ->
+      Hivent.emit("my:event", "foo (#{i})", %{version: 1, key: i})
+    end)
+
+    service = Hivent.Config.get(:hivent, :client_id)
+
+    event_queues = GenStage.stream([producer])
+    |> Stream.map(fn ({_event, queue}) -> queue end)
+    |> Enum.take(@partition_count)
+    |> Enum.sort
+
+    assert event_queues == ["#{service}:0", "#{service}:1"]
   end
 
   test "consuming events removes them from Redis", %{pid: producer, redis: redis, service: service} do
