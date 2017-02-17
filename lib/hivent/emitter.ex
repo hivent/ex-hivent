@@ -13,7 +13,7 @@ defmodule Hivent.Emitter do
 
   def emit(redis, name, payload, %{version: version} = options, created_at \\ Timex.now) when is_integer(version) do
     message = build_message(name, payload, options[:cid], version, created_at)
-    key = options[:key] || :erlang.crc32(payload)
+    key = options[:key] || inspect(payload) |> :erlang.crc32
 
     redis
     |> produce([], [name, message, key])

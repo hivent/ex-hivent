@@ -66,7 +66,7 @@ defmodule HiventEmitterTest do
     redis |> Exredis.Api.set("#{@service_name}:partition_count", 2)
 
     # Is guaranteed to hit partition 2 when used with :erlang.crc32
-    payload = "foobar"
+    payload = %{foo: "bar"}
 
     Hivent.Emitter.emit(redis, @signal, payload,
       %{version: @version, cid: "91dn1dn982d8921dasdads"}
