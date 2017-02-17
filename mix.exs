@@ -3,10 +3,12 @@ defmodule Hivent.Mixfile do
 
   def project do
     [app: :hivent,
-     version: "0.1.0",
+     version: "1.0.0",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     description: description(),
+     package: package(),
      deps: deps()]
   end
 
@@ -29,12 +31,28 @@ defmodule Hivent.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      { :exredis, ">= 0.2.4" },
-      { :uuid, "~> 1.1" },
-      { :poison, "~> 2.0" },
-      { :timex, "~> 3.0" },
-      { :gen_stage, "~> 0.11" },
-      { :credo, "~> 0.4", only: [:dev, :test] }
+      {:exredis, ">= 0.2.4"},
+      {:uuid, "~> 1.1"},
+      {:poison, "~> 2.0"},
+      {:timex, "~> 3.0"},
+      {:gen_stage, "~> 0.11"},
+      {:credo, "~> 0.4", only: [:dev, :test]},
+      {:ex_doc, ">= 0.0.0", only: :dev}
     ]
+  end
+
+  defp description do
+    """
+    An event stream that aggregates facts about your application.
+    """
+  end
+
+  defp package do
+    [# These are the default files included in the package
+     name: :hivent,
+     maintainers: ["Bruno Abrantes"],
+     licenses: ["MIT"],
+     links: %{"GitHub" => "https://github.com/inf0rmer/ex-hivent",
+              "Docs" => "https://github.com/inf0rmer/ex-hivent"}]
   end
 end
