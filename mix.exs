@@ -33,7 +33,7 @@ defmodule Hivent.Mixfile do
       { :uuid, "~> 1.1" },
       { :poison, "~> 2.0" },
       { :timex, "~> 3.0" },
-      { :gen_stage, "~>0.9" },
+      { :gen_stage, "~> 0.11" },
       { :credo, "~> 0.4", only: [:dev, :test] }
     ]
   end

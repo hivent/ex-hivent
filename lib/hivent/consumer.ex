@@ -1,6 +1,5 @@
 defmodule Hivent.Consumer do
 
-  alias Experimental.GenStage
   alias Hivent.Config
   alias Hivent.Consumer.Heartbeat
   alias Hivent.Consumer.Stages.{Producer}

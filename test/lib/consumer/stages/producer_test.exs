@@ -1,6 +1,5 @@
 defmodule Hivent.Consumer.Stages.ProducerTest do
   use ExUnit.Case
-  alias Experimental.GenStage
 
   doctest Hivent.Consumer.Stages.Producer
 

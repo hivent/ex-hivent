@@ -2,7 +2,6 @@ defmodule Hivent.Consumer.Stages.Producer do
   @moduledoc false
 
   import Exredis.Script
-  alias Experimental.GenStage
   alias Hivent.{Event, Config}
   alias Hivent.Consumer.Heartbeat
 
