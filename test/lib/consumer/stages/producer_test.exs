@@ -3,20 +3,38 @@ defmodule Hivent.Consumer.Stages.ProducerTest do
 
   doctest Hivent.Consumer.Stages.Producer
 
-  @consumer "a_consumer"
+  @consumer_name "a_consumer"
   @events ["my:event"]
   @partition_count 2
-  @interval 10_000
+  @interval 25
+
+  defmodule TestConsumer do
+    use GenStage
+
+    def start_link(producer) do
+      GenStage.start_link(__MODULE__, {producer, self()})
+    end
+
+    def init({producer, owner}) do
+      {:consumer, owner, subscribe_to: [producer]}
+    end
+
+    def handle_events(events, _from, owner) do
+      for event <- events, do: send(owner, event)
+
+      {:noreply, [], owner}
+    end
+  end
 
   setup do
     service = Hivent.Config.get(:hivent, :client_id)
     redis = Process.whereis(:redis)
     redis |> Exredis.Api.flushall
 
-    redis |> Exredis.Api.set("#{service}:#{@consumer}:alive", true)
-    redis |> Exredis.Api.sadd("#{service}:consumers", @consumer)
+    redis |> Exredis.Api.set("#{service}:#{@consumer_name}:alive", true)
+    redis |> Exredis.Api.sadd("#{service}:consumers", @consumer_name)
 
-    {:ok, pid} = Hivent.Consumer.Stages.Producer.start_link(@consumer, @events, @partition_count, @interval)
+    {:ok, pid} = Hivent.Consumer.Stages.Producer.start_link(@consumer_name, @events, @partition_count, @interval)
 
     [pid: pid, redis: redis, service: service]
   end
@@ -38,16 +56,20 @@ defmodule Hivent.Consumer.Stages.ProducerTest do
   end
 
   test "returns events when there is demand, if they exist", %{pid: producer} do
+    {:ok, _cons} = TestConsumer.start_link(producer)
+
     Enum.each(1..@partition_count, fn (i) ->
-      Hivent.emit("my:event", "foo (#{i})", %{version: 1, key: Enum.random(1..10)})
+      Hivent.emit("my:event", i, %{version: 1})
     end)
 
-    event_payloads = GenStage.stream([producer])
-    |> Stream.map(fn ({event, _queue}) -> event.payload end)
-    |> Enum.take(@partition_count)
+    :timer.sleep(250)
+
+    payloads = :erlang.process_info(self(), :messages)
+    |> elem(1)
+    |> Enum.map(fn ({event, _queue}) -> event.payload end)
     |> Enum.sort
 
-    assert event_payloads == ["foo (1)", "foo (2)"]
+    assert payloads == [1, 2]
   end
 
   test "returns the queue for each event when there is demand, if events exist", %{pid: producer} do
