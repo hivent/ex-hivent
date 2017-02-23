@@ -62,7 +62,7 @@ defmodule Hivent.Consumer.Stages.ProducerTest do
       Hivent.emit("my:event", i, %{version: 1})
     end)
 
-    :timer.sleep(250)
+    :timer.sleep(1000)
 
     payloads = :erlang.process_info(self(), :messages)
     |> elem(1)
