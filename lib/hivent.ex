@@ -17,12 +17,12 @@ defmodule Hivent do
   end
 
   def emit(name, payload, options) do
-    redis
+    redis()
     |> Emitter.emit(name, payload, options)
   end
 
   def quarantine(event, queue) do
-    redis
+    redis()
     |> Util.quarantine(event, queue)
   end
 

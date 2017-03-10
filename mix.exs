@@ -31,12 +31,12 @@ defmodule Hivent.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:exredis, ">= 0.2.4"},
+      {:exredis, "~> 0.2"},
       {:uuid, "~> 1.1"},
       {:poison, "~> 2.0"},
       {:timex, "~> 3.0"},
       {:gen_stage, "~> 0.11"},
-      {:credo, "~> 0.4", only: [:dev, :test]},
+      {:credo, "~> 0.6", only: [:dev, :test]},
       {:ex_doc, ">= 0.0.0", only: :dev}
     ]
   end
