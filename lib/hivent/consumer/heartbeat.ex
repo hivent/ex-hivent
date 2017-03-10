@@ -28,7 +28,7 @@ defmodule Hivent.Consumer.Heartbeat do
 
   # Server
   def handle_info(:beat, state) do
-    redis
+    redis()
     |> heartbeat([], [state[:service], state[:consumer], state[:interval]])
 
     schedule(state[:interval])

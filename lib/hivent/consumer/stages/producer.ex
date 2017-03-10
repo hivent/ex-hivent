@@ -28,10 +28,10 @@ defmodule Hivent.Consumer.Stages.Producer do
 
   def init(%{events: events, service: service, partition_count: partition_count} = state) do
     Enum.each(events, fn (event) ->
-      redis |> Exredis.Api.sadd(event, service)
+      redis() |> Exredis.Api.sadd(event, service)
     end)
 
-    redis |> Exredis.Api.set("#{service}:partition_count", partition_count)
+    redis() |> Exredis.Api.set("#{service}:partition_count", partition_count)
 
     {:producer, state}
   end
@@ -77,30 +77,30 @@ defmodule Hivent.Consumer.Stages.Producer do
   end
 
   defp queues(%{service: service, consumer_name: consumer_name, interval: interval}) do
-    case rebalance_queues(redis, [], [service, consumer_name, interval]) do
+    case rebalance_queues(redis(), [], [service, consumer_name, interval]) do
       :undefined -> []
       result -> result
     end
   end
 
   defp take_items(amount, queue) do
-    items = redis
+    items = redis()
     |> Exredis.Api.lrange(queue, -amount, -1)
     |> Enum.map(fn (item) -> {queue, item} end)
 
-    redis |> Exredis.Api.ltrim(queue, 0, queue_length(queue) - amount)
+    redis() |> Exredis.Api.ltrim(queue, 0, queue_length(queue) - amount)
 
     items
   end
 
   defp queue_length(queue) do
-    redis |> Exredis.Api.llen(queue) |> String.to_integer()
+    redis() |> Exredis.Api.llen(queue) |> String.to_integer()
   end
 
   defp parse_item({queue, item}) do
     case Poison.decode(item, as: %Event{}) do
       {:error, _} ->
-        redis |> Exredis.Api.lpush("#{queue}:dead_letter", item)
+        redis() |> Exredis.Api.lpush("#{queue}:dead_letter", item)
         nil
       {:ok, parsed} -> {parsed, queue}
     end
