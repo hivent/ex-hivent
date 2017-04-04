@@ -11,7 +11,7 @@ defmodule Hivent.Consumer.Stages.Producer do
 
   defredis_script :rebalance_queues, file_path: "lib/hivent/consumer/lua/rebalance_queues.lua"
 
-  def start_link(consumer_name, events \\ [], partition_count \\ 1, interval \\ @default_interval) do
+  def start_link(consumer_name, events \\ [], partition_count \\ Config.get(:hivent, :partition_count), interval \\ @default_interval) do
     config = %{
       events: events,
       consumer_name: consumer_name,
