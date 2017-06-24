@@ -14,9 +14,9 @@ defmodule Hivent.Consumer.Heartbeat do
   def start_link(consumer, interval \\ @default_interval) do
     GenServer.start_link(__MODULE__, %{
       consumer: consumer,
-      service: Config.get(:hivent, :client_id),
+      service: service(),
       interval: interval
-    }, name: __MODULE__)
+    }, name: name())
   end
 
   def init(state) do
@@ -42,4 +42,8 @@ defmodule Hivent.Consumer.Heartbeat do
   defp schedule(interval) do
     Process.send_after(self(), :beat, interval)
   end
+
+  defp service, do: Config.get(:hivent, :client_id)
+
+  defp name, do: String.to_atom("#{service}_heartbeat")
 end
