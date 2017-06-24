@@ -17,6 +17,12 @@ defmodule HiventConsumerHeartbeatTest do
     [pid: pid, redis: redis, service: service]
   end
 
+  test "it is named after the service", %{pid: pid, service: service} do
+    heartbeat_name = String.to_atom("#{service}_heartbeat")
+
+    assert Process.whereis(heartbeat_name) == pid
+  end
+
   test "keeps the consumer alive", %{redis: redis, service: service} do
     key = "#{service}:#{@consumer}:alive"
 
