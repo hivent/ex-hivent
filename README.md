@@ -1,31 +1,28 @@
 # Hivent
 
-## Quickstart
+## Emitting events
 ```elixir
-defmodule TestConsumer do
-  use GenStage
+Hivent.emit("some:event", %{foo: "bar"}, %{version: 1})
+```
 
-  def start_link do
-    {:ok, producer} = Hivent.Consumer.Stages.Producer.start_link("test", ["test:event"])
-    {:ok, consumer } = GenStage.start_link(__MODULE__, [])
-    GenStage.sync_subscribe(consumer, to: producer)
-  end
+## Consuming events
+```elixir
+  defmodule TestConsumer do
+    @topic "some:event"
+    @name "test_consumer"
+    @partition_count 2
 
-  def init(state) do
-    {:consumer, state}
-  end
+    use Hivent.Consumer
 
-  def handle_events(events, _from, state) do
-    for event <- events do
-      IO.inspect {self(), event}
+    def process(%Hivent.Event{} = event) do
+      if do_something(event) do
+        :ok
+      else
+        # Puts the event in the dead letter queue
+        {:error, "failed to process"}
+      end
     end
-
-    Process.sleep(250)
-
-    # As a consumer we never emit events
-    {:noreply, [], state}
   end
-end
 ```
 
 ## Installation

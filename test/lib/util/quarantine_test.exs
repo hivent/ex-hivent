@@ -23,7 +23,7 @@ defmodule HiventQuarantineTest do
   }
 
   setup do
-    redis = Process.whereis(:redis)
+    redis = Process.whereis(Hivent.Redis)
 
     redis |> Exredis.Api.flushall
 

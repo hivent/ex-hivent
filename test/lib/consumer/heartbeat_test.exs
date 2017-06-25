@@ -8,7 +8,7 @@ defmodule HiventConsumerHeartbeatTest do
 
   setup do
     {:ok, pid} = Hivent.Consumer.Heartbeat.start_link(@consumer, @interval)
-    redis = Process.whereis(:redis)
+    redis = Process.whereis(Hivent.Redis)
 
     redis |> Exredis.Api.flushall
 

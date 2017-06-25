@@ -4,37 +4,19 @@ defmodule Hivent.Consumer.Stages.ProducerTest do
   doctest Hivent.Consumer.Stages.Producer
 
   @consumer_name "a_consumer"
-  @events ["my:event"]
   @partition_count 2
   @interval 25
 
-  defmodule TestConsumer do
-    use GenStage
-
-    def start_link(producer) do
-      GenStage.start_link(__MODULE__, {producer, self()})
-    end
-
-    def init({producer, owner}) do
-      {:consumer, owner, subscribe_to: [producer]}
-    end
-
-    def handle_events(events, _from, owner) do
-      for event <- events, do: send(owner, event)
-
-      {:noreply, [], owner}
-    end
-  end
-
   setup do
     service = Hivent.Config.get(:hivent, :client_id)
-    redis = Process.whereis(:redis)
+    redis = Process.whereis(Hivent.Redis)
     redis |> Exredis.Api.flushall
 
     redis |> Exredis.Api.set("#{service}:#{@consumer_name}:alive", true)
     redis |> Exredis.Api.sadd("#{service}:consumers", @consumer_name)
+    redis |> Exredis.Api.sadd("my:event", Hivent.Config.get(:hivent, :client_id))
 
-    {:ok, pid} = Hivent.Consumer.Stages.Producer.start_link(@consumer_name, @events, @partition_count, @interval)
+    {:ok, pid} = Hivent.Consumer.Stages.Producer.start_link(@consumer_name, @partition_count, @interval)
 
     [pid: pid, redis: redis, service: service]
   end
@@ -47,34 +29,10 @@ defmodule Hivent.Consumer.Stages.ProducerTest do
     assert partition_count == @partition_count
   end
 
-  test "initializing the consumer adds its service to the configured events consumer lists", %{redis: redis, service: service} do
-    assert @events
-    |> Enum.all?(fn (event) ->
-      services = Exredis.Api.smembers(redis, event)
-      Enum.member?(services, service)
-    end)
-  end
-
-  test "returns events when there is demand, if they exist", %{pid: producer} do
-    {:ok, _cons} = TestConsumer.start_link(producer)
-
-    Enum.each(1..@partition_count, fn (i) ->
-      Hivent.emit("my:event", i, %{version: 1})
-    end)
-
-    :timer.sleep(1000)
-
-    payloads = :erlang.process_info(self(), :messages)
-    |> elem(1)
-    |> Enum.map(fn ({event, _queue}) -> event.payload end)
-    |> Enum.sort
-
-    assert payloads == [1, 2]
-  end
-
   test "returns the queue for each event when there is demand, if events exist", %{pid: producer} do
     Enum.each(1..@partition_count, fn (i) ->
       Hivent.emit("my:event", "foo (#{i})", %{version: 1, key: i})
+      :timer.sleep(25)
     end)
 
     service = Hivent.Config.get(:hivent, :client_id)
@@ -90,6 +48,7 @@ defmodule Hivent.Consumer.Stages.ProducerTest do
   test "consuming events removes them from Redis", %{pid: producer, redis: redis, service: service} do
     Enum.each(1..@partition_count, fn (i) ->
       Hivent.emit("my:event", "foo (#{i})", %{version: 1, key: Enum.random(1..10)})
+      :timer.sleep(25)
     end)
 
     GenStage.stream([producer]) |> Enum.take(2)

@@ -11,9 +11,8 @@ defmodule Hivent.Consumer.Stages.Producer do
 
   defredis_script :rebalance_queues, file_path: "lib/hivent/consumer/lua/rebalance_queues.lua"
 
-  def start_link(consumer_name, events \\ [], partition_count \\ Config.get(:hivent, :partition_count), interval \\ @default_interval) do
+  def start_link(consumer_name, partition_count \\ Config.get(:hivent, :partition_count), interval \\ @default_interval) do
     config = %{
-      events: events,
       consumer_name: consumer_name,
       service: Config.get(:hivent, :client_id),
       partition_count: partition_count,
@@ -23,14 +22,10 @@ defmodule Hivent.Consumer.Stages.Producer do
 
     {:ok, _} = Heartbeat.start_link(consumer_name)
 
-    GenStage.start_link(__MODULE__, config)
+    GenStage.start_link(__MODULE__, config, name: String.to_atom("#{Config.get(:hivent, :client_id)}_producer"))
   end
 
-  def init(%{events: events, service: service, partition_count: partition_count} = state) do
-    Enum.each(events, fn (event) ->
-      redis() |> Exredis.Api.sadd(event, service)
-    end)
-
+  def init(%{service: service, partition_count: partition_count} = state) do
     redis() |> Exredis.Api.set("#{service}:partition_count", partition_count)
 
     {:producer, state}
@@ -72,9 +67,7 @@ defmodule Hivent.Consumer.Stages.Producer do
     {:noreply, events, %{state | demand: new_demand}}
   end
 
-  defp redis do
-    Process.whereis(:redis)
-  end
+  defp redis, do: Process.whereis(Hivent.Redis)
 
   defp queues(%{service: service, consumer_name: consumer_name, interval: interval}) do
     case rebalance_queues(redis(), [], [service, consumer_name, interval]) do
@@ -100,7 +93,7 @@ defmodule Hivent.Consumer.Stages.Producer do
   defp parse_item({queue, item}) do
     case Poison.decode(item, as: %Event{}) do
       {:error, _} ->
-        redis() |> Exredis.Api.lpush("#{queue}:dead_letter", item)
+        Hivent.Util.quarantine(redis(), item, queue)
         nil
       {:ok, parsed} -> {parsed, queue}
     end
