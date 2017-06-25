@@ -3,7 +3,7 @@ defmodule Hivent.Mixfile do
 
   def project do
     [app: :hivent,
-     version: "1.0.3",
+     version: "2.0.0",
      elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
