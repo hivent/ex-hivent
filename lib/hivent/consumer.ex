@@ -61,14 +61,14 @@ defmodule Hivent.Consumer do
   end
 
   def hospitalize(event, queue) do
-    redis() |> Exredis.Api.lpush("#{queue}:dead_letter", Poison.encode!(event))
+    Hivent.Util.quarantine(redis(), event, queue)
   end
 
   def producer_name, do: String.to_atom("#{service()}_producer")
 
   def consumer_name, do: String.to_atom("#{service()}_consumer")
 
-  defp redis, do: Process.whereis(:redis)
+  defp redis, do: Process.whereis(Hivent.Redis)
 
   defp service, do: Config.get(:hivent, :client_id)
 end

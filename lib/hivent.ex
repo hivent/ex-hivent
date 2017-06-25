@@ -10,7 +10,7 @@ defmodule Hivent do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Redis, [:redis, Config.get(:hivent, :endpoint)]),
+      worker(Redis, [Hivent.Redis, Config.get(:hivent, :endpoint)]),
       supervisor(Phoenix.PubSub.PG2, [:hivent_pubsub, []]),
     ]
 
@@ -28,6 +28,6 @@ defmodule Hivent do
   end
 
   def redis do
-    Process.whereis(:redis)
+    Process.whereis(Hivent.Redis)
   end
 end

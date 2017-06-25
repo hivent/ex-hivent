@@ -9,7 +9,7 @@ defmodule Hivent.Consumer.Stages.ProducerTest do
 
   setup do
     service = Hivent.Config.get(:hivent, :client_id)
-    redis = Process.whereis(:redis)
+    redis = Process.whereis(Hivent.Redis)
     redis |> Exredis.Api.flushall
 
     redis |> Exredis.Api.set("#{service}:#{@consumer_name}:alive", true)

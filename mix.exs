@@ -9,7 +9,8 @@ defmodule Hivent.Mixfile do
      start_permanent: Mix.env == :prod,
      description: description(),
      package: package(),
-     deps: deps()]
+     deps: deps(),
+     elixirc_paths: elixirc_paths(Mix.env)]
   end
 
   # Configuration for the OTP application
@@ -56,4 +57,7 @@ defmodule Hivent.Mixfile do
      links: %{"GitHub" => "https://github.com/inf0rmer/ex-hivent",
               "Docs" => "https://github.com/inf0rmer/ex-hivent"}]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end

@@ -1,5 +1,6 @@
 defmodule Hivent.ConsumerTest do
   use ExUnit.Case
+  import TimeHelper
 
   defmodule TestConsumerSuccess do
     @topic "some:event"
@@ -15,7 +16,7 @@ defmodule Hivent.ConsumerTest do
   end
 
   defmodule TestConsumerFailure do
-    @topic "some:event"
+    @topic "another:event"
     @name "test_consumer_failure"
     @partition_count 2
 
@@ -25,7 +26,7 @@ defmodule Hivent.ConsumerTest do
   end
 
   setup do
-    redis = Process.whereis(:redis)
+    redis = Process.whereis(Hivent.Redis)
     service = Hivent.Config.get(:hivent, :client_id)
     Agent.start_link(fn -> [] end, name: :success_events)
 
@@ -44,29 +45,28 @@ defmodule Hivent.ConsumerTest do
 
     Hivent.emit("some:event", %{bar: "baz"}, %{version: 1, key: 0})
 
-    :timer.sleep(500)
-
-    event = Agent.get(:success_events, fn (events) -> events end) |> hd
-
-    assert event.meta.name == "some:event"
+    wait_until 5_000, fn ->
+      event = Agent.get(:success_events, fn (events) -> events end) |> hd
+      assert event.meta.name == "some:event"
+    end
   end
 
   test "when returning an error from the process() callback it puts the event in the dead letter queue", %{redis: redis, service: service} do
     {:ok, _consumer} = TestConsumerFailure.start_link()
 
-    name = "some:event"
+    name = "another:event"
     payload = %{"foo" => "bar"}
 
     Hivent.emit(name, payload, %{version: 1, key: 0})
 
-    :timer.sleep(500)
+    wait_until 5_000, fn ->
+      hospitalized_event = redis
+        |> Exredis.Api.lindex("#{service}:0:dead_letter", 0)
+        |> Poison.decode!(as: %Hivent.Event{})
 
-    hospitalized_event = redis
-      |> Exredis.Api.lindex("#{service}:0:dead_letter", 0)
-      |> Poison.decode!(as: %Hivent.Event{})
-
-    assert hospitalized_event.meta.name == name
-    assert hospitalized_event.payload == payload
+      assert hospitalized_event.meta.name == name
+      assert hospitalized_event.payload == payload
+    end
   end
 
 end

@@ -36,7 +36,7 @@ defmodule Hivent.Consumer.Heartbeat do
   end
 
   defp redis do
-    Process.whereis(:redis)
+    Process.whereis(Hivent.Redis)
   end
 
   defp schedule(interval) do

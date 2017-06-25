@@ -7,7 +7,7 @@ defmodule Hivent.Consumer.Stages.Producer do
 
   use GenStage
 
-  @default_interval 250
+  @default_interval 1_000
 
   defredis_script :rebalance_queues, file_path: "lib/hivent/consumer/lua/rebalance_queues.lua"
 
@@ -67,7 +67,7 @@ defmodule Hivent.Consumer.Stages.Producer do
     {:noreply, events, %{state | demand: new_demand}}
   end
 
-  defp redis, do: Process.whereis(:redis)
+  defp redis, do: Process.whereis(Hivent.Redis)
 
   defp queues(%{service: service, consumer_name: consumer_name, interval: interval}) do
     case rebalance_queues(redis(), [], [service, consumer_name, interval]) do
@@ -93,7 +93,7 @@ defmodule Hivent.Consumer.Stages.Producer do
   defp parse_item({queue, item}) do
     case Poison.decode(item, as: %Event{}) do
       {:error, _} ->
-        redis() |> Exredis.Api.lpush("#{queue}:dead_letter", item)
+        Hivent.Util.quarantine(redis(), item, queue)
         nil
       {:ok, parsed} -> {parsed, queue}
     end

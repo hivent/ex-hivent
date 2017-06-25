@@ -2,7 +2,7 @@ defmodule HiventTest do
   use ExUnit.Case
 
   setup do
-    redis = Process.whereis(:redis)
+    redis = Process.whereis(Hivent.Redis)
 
     %{ redis: redis }
   end

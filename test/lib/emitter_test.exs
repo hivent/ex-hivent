@@ -9,7 +9,7 @@ defmodule HiventEmitterTest do
   @cid "91dn1dn982d8921dasdads"
 
   setup do
-    redis = Process.whereis(:redis)
+    redis = Process.whereis(Hivent.Redis)
 
     redis |> Exredis.Api.flushall
 
