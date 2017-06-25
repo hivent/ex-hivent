@@ -17,7 +17,9 @@ defmodule Hivent.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     [mod: {Hivent, []},
-     applications: [:logger, :timex]]
+     applications: [:logger,
+                    :timex,
+                    :phoenix_pubsub]]
   end
 
   # Dependencies can be Hex packages:
@@ -30,15 +32,14 @@ defmodule Hivent.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [
-      {:exredis, "~> 0.2"},
-      {:uuid, "~> 1.1"},
-      {:poison, "~> 2.0"},
-      {:timex, "~> 3.0"},
-      {:gen_stage, "~> 0.11"},
-      {:credo, "~> 0.6", only: [:dev, :test]},
-      {:ex_doc, ">= 0.0.0", only: :dev}
-    ]
+    [{:exredis, "~> 0.2"},
+     {:uuid, "~> 1.1"},
+     {:poison, "~> 2.0"},
+     {:timex, "~> 3.0"},
+     {:gen_stage, "~> 0.11"},
+     {:phoenix_pubsub, "~> 1.0"},
+     {:credo, "~> 0.6", only: [:dev, :test]},
+     {:ex_doc, ">= 0.0.0", only: :dev}]
   end
 
   defp description do

@@ -45,5 +45,5 @@ defmodule Hivent.Consumer.Heartbeat do
 
   defp service, do: Config.get(:hivent, :client_id)
 
-  defp name, do: String.to_atom("#{service}_heartbeat")
+  defp name, do: String.to_atom("#{service()}_heartbeat")
 end

@@ -11,6 +11,7 @@ defmodule Hivent do
 
     children = [
       worker(Redis, [:redis, Config.get(:hivent, :endpoint)]),
+      supervisor(Phoenix.PubSub.PG2, [:hivent_pubsub, []]),
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Hivent)
