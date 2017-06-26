@@ -11,7 +11,7 @@ defmodule Hivent.Consumer.Stages.Producer do
 
   defredis_script :rebalance_queues, file_path: "lib/hivent/consumer/lua/rebalance_queues.lua"
 
-  def start_link(consumer_name, partition_count \\ Config.get(:hivent, :partition_count), interval \\ @default_interval) do
+  def start_link(consumer_name, name, partition_count \\ Config.get(:hivent, :partition_count), interval \\ @default_interval) do
     config = %{
       consumer_name: consumer_name,
       service: Config.get(:hivent, :client_id),
@@ -22,7 +22,7 @@ defmodule Hivent.Consumer.Stages.Producer do
 
     {:ok, _} = Heartbeat.start_link(consumer_name)
 
-    GenStage.start_link(__MODULE__, config, name: String.to_atom("#{Config.get(:hivent, :client_id)}_producer"))
+    GenStage.start_link(__MODULE__, config, name: name)
   end
 
   def init(%{service: service, partition_count: partition_count} = state) do

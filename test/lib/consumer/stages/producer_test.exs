@@ -4,6 +4,7 @@ defmodule Hivent.Consumer.Stages.ProducerTest do
   doctest Hivent.Consumer.Stages.Producer
 
   @consumer_name "a_consumer"
+  @producer_name :a_producer
   @partition_count 2
   @interval 25
 
@@ -16,7 +17,7 @@ defmodule Hivent.Consumer.Stages.ProducerTest do
     redis |> Exredis.Api.sadd("#{service}:consumers", @consumer_name)
     redis |> Exredis.Api.sadd("my:event", Hivent.Config.get(:hivent, :client_id))
 
-    {:ok, pid} = Hivent.Consumer.Stages.Producer.start_link(@consumer_name, @partition_count, @interval)
+    {:ok, pid} = Hivent.Consumer.Stages.Producer.start_link(@consumer_name, @producer_name, @partition_count, @interval)
 
     [pid: pid, redis: redis, service: service]
   end

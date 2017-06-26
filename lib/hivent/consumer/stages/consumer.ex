@@ -4,8 +4,8 @@ defmodule Hivent.Consumer.Stages.Consumer do
   alias Phoenix.PubSub
   alias Hivent.Config
 
-  def start_link(producer) do
-    GenStage.start_link(__MODULE__, {producer, self()}, name: consumer_name())
+  def start_link(producer, name) do
+    GenStage.start_link(__MODULE__, {producer, self()}, name: name)
   end
 
   def init({producer, owner}) do
@@ -18,9 +18,5 @@ defmodule Hivent.Consumer.Stages.Consumer do
     end
 
     {:noreply, [], owner}
-  end
-
-  defp consumer_name do
-    String.to_atom("#{Config.get(:hivent, :client_id)}_consumer")
   end
 end
