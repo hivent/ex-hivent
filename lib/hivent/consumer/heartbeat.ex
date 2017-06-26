@@ -16,7 +16,7 @@ defmodule Hivent.Consumer.Heartbeat do
       consumer: consumer,
       service: service(),
       interval: interval
-    }, name: name())
+    }, name: name(consumer))
   end
 
   def init(state) do
@@ -45,5 +45,5 @@ defmodule Hivent.Consumer.Heartbeat do
 
   defp service, do: Config.get(:hivent, :client_id)
 
-  defp name, do: String.to_atom("#{service()}_heartbeat")
+  defp name(consumer), do: String.to_atom("#{consumer}_heartbeat")
 end

@@ -22,13 +22,14 @@ defmodule Hivent.Consumer do
       end
 
       def init(%{topic: topic, name: name, partition_count: partition_count}) do
-        {:ok, producer} = case Process.whereis(Consumer.producer_name()) do
-          nil -> ProducerStage.start_link(name, partition_count)
-          pid -> pid
+        {:ok, producer} = case Process.whereis(Consumer.producer_name(name)) do
+          nil -> ProducerStage.start_link(name, Consumer.producer_name(name), partition_count)
+          pid -> {:ok, pid}
         end
 
-        case Process.whereis(Consumer.consumer_name()) do
-          nil -> ConsumerStage.start_link(producer)
+        case Process.whereis(Consumer.consumer_name(name)) do
+          nil -> ConsumerStage.start_link(producer, Consumer.consumer_name(name))
+          pid -> {:ok, pid}
         end
 
         Consumer.register(topic)
@@ -64,9 +65,9 @@ defmodule Hivent.Consumer do
     Hivent.Util.quarantine(redis(), event, queue)
   end
 
-  def producer_name, do: String.to_atom("#{service()}_producer")
+  def producer_name(name), do: String.to_atom("#{service()}_#{name}_producer")
 
-  def consumer_name, do: String.to_atom("#{service()}_consumer")
+  def consumer_name(name), do: String.to_atom("#{service()}_#{name}_consumer")
 
   defp redis, do: Process.whereis(Hivent.Redis)
 
