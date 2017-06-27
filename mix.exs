@@ -35,11 +35,11 @@ defmodule Hivent.Mixfile do
   defp deps do
     [{:exredis, "~> 0.2"},
      {:uuid, "~> 1.1"},
-     {:poison, "~> 2.0"},
-     {:timex, "~> 3.0"},
-     {:gen_stage, "~> 0.11"},
+     {:poison, "~> 3.1"},
+     {:timex, "~> 3.1"},
+     {:gen_stage, "~> 0.12"},
      {:phoenix_pubsub, "~> 1.0"},
-     {:credo, "~> 0.6", only: [:dev, :test]},
+     {:credo, "~> 0.8", only: [:dev, :test]},
      {:ex_doc, ">= 0.0.0", only: :dev}]
   end
 
