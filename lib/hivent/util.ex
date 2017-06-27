@@ -1,4 +1,7 @@
 defmodule Hivent.Util do
+  @moduledoc """
+  Generic Hivent utilities.
+  """
 
   alias Hivent.Event
 

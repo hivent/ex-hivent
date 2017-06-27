@@ -1,4 +1,19 @@
 defmodule Hivent.Consumer do
+  @moduledoc """
+  The Hivent Consumer. Use module options to configure your consumer:
+    - @topic The topic you want to consume, ie. "some:event"
+    - @name The name of your consumer
+    - @partition_count The number of partitions data will be partitioned in
+
+  Implement the Consumer behaviour by overriding process/1. The argument is the
+  %Hivent.Event{} consumed. Use return values to inform Hivent if processing the
+  event succeded or failed:
+    - :ok
+    - {:error, "Failed to process XYZ"}
+  Events that have failed to be processed will be put in a dedicated dead letter
+  queue.
+  """
+
   use GenServer
 
   alias Hivent.Config
