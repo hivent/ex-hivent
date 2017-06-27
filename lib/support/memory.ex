@@ -1,4 +1,9 @@
 defmodule Hivent.Memory do
+  @moduledoc """
+  In-memory implementation of a Hivent emitter. Includes utility methods to query
+  the cache. Use this in your tests to assert your events are properly published.
+  """
+
   alias Hivent.{Event, Config}
   alias Event.Meta
 
@@ -30,6 +35,10 @@ defmodule Hivent.Memory do
         GenServer.cast(@name, {:clear})
       end
 
+      def include?(payload, meta) do
+        GenServer.call(@name, {:include?, payload, meta})
+      end
+
       # Callbacks
 
       def init(:ok) do
@@ -51,17 +60,27 @@ defmodule Hivent.Memory do
       def handle_call({:all}, _from, cache) do
         {:reply, cache, cache}
       end
+
+      def handle_call({:include?, payload, meta}, _from, cache) do
+        result = Enum.any?(cache, fn (event) ->
+          match?(payload, event.payload) && Map.merge(event.meta, meta) == event.meta
+        end)
+
+        {:reply, result, cache}
+      end
     end
 
     def emit(name, payload, %{version: version} = options, created_at \\ Timex.now) when is_integer(version) do
-      build_message(name, payload, options[:cid], version, created_at) |> Cache.insert
+      build_message(name, payload, options[:cid], version, created_at)
+      |> Poison.decode!(as: %Event{})
+      |> Cache.insert
     end
 
     defp build_message(name, payload, cid, version, created_at) do
       %Event{
         payload: payload,
         meta:    meta_data(name, cid, version, created_at)
-      }
+      } |> Poison.encode!
     end
 
     defp meta_data(name, cid, version, created_at) do
@@ -77,11 +96,45 @@ defmodule Hivent.Memory do
 
   end
 
-  def start(_type, _args) do
+  @doc """
+  Starts the Hivent.Memory server
+  """
+  def start(_type \\ nil, _args \\ nil) do
     {:ok, _} = Emitter.Cache.start_link
   end
 
+  @doc """
+  Emits an event to the memory store.
+  """
   def emit(name, payload, options) do
     Emitter.emit(name, payload, options)
+  end
+
+  @doc """
+  Gets all events currently in the memory store.
+  """
+  def all, do: Emitter.Cache.all
+
+  @doc """
+  Gets the last event emitted to the memory store.
+  """
+  def last, do: Emitter.Cache.last
+
+  @doc """
+  Clears the memory store.
+  """
+  def clear, do: Emitter.Cache.clear
+
+  @doc """
+  Checks if the memory store is empty.
+  """
+  def empty?, do: Enum.empty?(all)
+
+  @moduledoc """
+  Checks if an event with a given payload and/or metadata exists in the store.
+  Supports partial matching for both payload and metadata.
+  """
+  def include?(payload, meta \\ %{}) do
+    Emitter.Cache.include?(payload, meta)
   end
 end
