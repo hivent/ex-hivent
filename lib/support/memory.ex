@@ -8,8 +8,10 @@ defmodule Hivent.Memory do
   alias Event.Meta
 
   defmodule Emitter do
+    @moduledoc false
 
     defmodule Cache do
+      @moduledoc false
       use GenServer
 
       @name __MODULE__

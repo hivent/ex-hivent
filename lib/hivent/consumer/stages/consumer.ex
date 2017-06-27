@@ -1,8 +1,12 @@
 defmodule Hivent.Consumer.Stages.Consumer do
+  @moduledoc """
+  Hivent Consumer Stage. It subscribes to the Producer Stage and broadcasts
+  consumed events to the internal Hivent pubsub channel
+  """
+
   use GenStage
 
   alias Phoenix.PubSub
-  alias Hivent.Config
 
   def start_link(producer, name) do
     GenStage.start_link(__MODULE__, {producer, self()}, name: name)
