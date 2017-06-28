@@ -2,7 +2,6 @@ defmodule Hivent.Consumer.Stages.Consumer do
   use GenStage
 
   alias Phoenix.PubSub
-  alias Hivent.Config
 
   def start_link(producer, name) do
     GenStage.start_link(__MODULE__, {producer, self()}, name: name)

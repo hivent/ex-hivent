@@ -4,7 +4,7 @@ defmodule Hivent do
   connection to the Redis backend.
   """
   use Application
-  alias Hivent.{Emitter, Redis, Config, Util}
+  alias Hivent.{Config, Emitter, Redis}
 
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
@@ -22,12 +22,5 @@ defmodule Hivent do
     |> Emitter.emit(name, payload, options)
   end
 
-  def quarantine(event, queue) do
-    redis()
-    |> Util.quarantine(event, queue)
-  end
-
-  def redis do
-    Process.whereis(Hivent.Redis)
-  end
+  defp redis, do: Process.whereis(Hivent.Redis)
 end

@@ -13,6 +13,8 @@ defmodule Hivent.Consumer do
     quote do
       @behaviour Consumer
 
+      require Logger
+
       def start_link(otp_opts \\ []) do
         GenServer.start_link(__MODULE__, %{
           topic: @topic,
@@ -36,13 +38,19 @@ defmodule Hivent.Consumer do
 
         :ok = PubSub.subscribe(:hivent_pubsub, topic)
 
+        Logger.info "Initialized Hivent.Consumer #{name}"
+
         {:ok, %{topic: topic}}
       end
 
       def handle_info({event, queue}, state) do
         case process(event) do
-          {:error, _reason} -> Consumer.hospitalize(event, queue)
-          :ok -> nil
+          {:error, _reason} ->
+            Logger.info "Error processing event #{event.meta.uuid}"
+            Consumer.hospitalize(event, queue)
+          :ok ->
+            Logger.info "Finished processing event #{event.meta.uuid}"
+            nil
         end
 
         {:noreply, state}
