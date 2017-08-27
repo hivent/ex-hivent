@@ -9,7 +9,12 @@ defmodule Hivent do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Emitter, [[url: "ws://localhost:4000/producer/websocket", client_id: "a_client"]])
+      worker(Emitter, [[
+        host: "localhost",
+        port: 4000,
+        path: "/producer/websocket",
+        client_id: "a_client"
+      ]])
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Hivent)

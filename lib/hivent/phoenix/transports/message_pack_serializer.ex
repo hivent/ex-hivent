@@ -1,4 +1,4 @@
-defmodule Hivent.Transports.MessagePackSerializer do
+defmodule Hivent.Phoenix.Transports.MessagePackSerializer do
   @moduledoc false
   # https://nerds.stoiximan.gr/2016/11/23/binary-data-over-phoenix-sockets/
 
@@ -11,7 +11,7 @@ defmodule Hivent.Transports.MessagePackSerializer do
     event |> pack_data
   end
 
-  def decode!(message, _opts) do
+  def decode!(message) do
     unpack_data(message)
   end
 

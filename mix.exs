@@ -32,10 +32,14 @@ defmodule Hivent.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [{:poison, "~> 3.1"},
-     {:websocket_client, github: "jeremyong/websocket_client"},
+     {:socket, "~> 0.3.11"},
      {:msgpax, "~> 2.0"},
+     {:flow, "~> 0.12"},
+     {:uuid, "~> 1.1"},
+     {:timex, "~> 3.1"},
      {:credo, "~> 0.8", only: [:dev, :test]},
-     {:ex_doc, ">= 0.0.0", only: :dev}]
+     {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+     {:test_server, path: "test/support/test_server", only: :test}]
   end
 
   defp description do
