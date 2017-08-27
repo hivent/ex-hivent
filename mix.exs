@@ -18,9 +18,7 @@ defmodule Hivent.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     [mod: {Hivent, []},
-     applications: [:logger,
-                    :timex,
-                    :phoenix_pubsub]]
+     applications: [:logger]]
   end
 
   # Dependencies can be Hex packages:
@@ -33,12 +31,9 @@ defmodule Hivent.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:exredis, "~> 0.2"},
-     {:uuid, "~> 1.1"},
-     {:poison, "~> 3.1"},
-     {:timex, "~> 3.1"},
-     {:gen_stage, "~> 0.12"},
-     {:phoenix_pubsub, "~> 1.0"},
+    [{:poison, "~> 3.1"},
+     {:websocket_client, github: "jeremyong/websocket_client"},
+     {:msgpax, "~> 2.0"},
      {:credo, "~> 0.8", only: [:dev, :test]},
      {:ex_doc, ">= 0.0.0", only: :dev}]
   end

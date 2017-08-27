@@ -1,42 +1,60 @@
 defmodule Hivent.Emitter do
   @moduledoc """
-  The Hivent Emitter module. It emits signals into a
-  Redis backend using a Lua script.
+  The Hivent Emitter module. It emits signals into a Hivent Server instance
+  through a Websocket.
   """
 
-  import Exredis.Script
-  use Timex
+  use GenServer
   alias Hivent.{Event, Config}
+  alias Hivent.Emitter.Socket
   alias Event.Meta
 
-  defredis_script :produce, file_path: "lib/hivent/lua/producer.lua"
+  ## Client API
+  def start_link([url: url, client_id: client_id]) do
+    GenServer.start_link(__MODULE__, %{url: url, client_id: client_id}, name: __MODULE__)
+  end
 
-  def emit(redis, name, payload, %{version: version} = options, created_at \\ Timex.now) when is_integer(version) do
-    message = build_message(name, payload, options[:cid], version, created_at)
-    key = options[:key] || inspect(payload) |> :erlang.crc32
+  def emit(server, name, payload, %{version: version} = options) when is_integer(version) do
+    message = build_message(name, payload, options[:cid], version, options[:key])
 
-    redis
-    |> produce([], [name, message, key])
+    GenServer.cast(server, {:emit, message})
 
     {:ok}
   end
 
-  defp build_message(name, payload, cid, version, created_at) do
+  defp build_message(name, payload, cid, version, key) do
+    key = (key || inspect(payload)) |> :erlang.crc32
+
     %Event{
+      name: name,
       payload: payload,
-      meta:    meta_data(name, cid, version, created_at)
+      meta:    meta_data(cid, version, key)
     }
-    |> Poison.encode!
   end
 
-  defp meta_data(name, cid, version, created_at) do
+  defp meta_data(cid, version, key) do
     %Meta{
-      uuid:       UUID.uuid4(:hex),
-      name:       name,
-      version:    version || 1,
-      cid:        cid || UUID.uuid4(:hex),
-      producer:   Config.get(:hivent, :client_id),
-      created_at: created_at |> DateTime.to_iso8601
+      version: version,
+      cid:     cid,
+      key:     key
     }
+  end
+
+  ## Server Callbacks
+  def init(%{url: url, client_id: client_id}) do
+    {:ok, socket} = Socket.start_link(self, "#{url}?client_id=#{client_id}")
+    Socket.join(socket, "ingress:all", %{})
+
+    {:ok, %{socket: socket}}
+  end
+
+  def handle_cast({:emit, message}, %{socket: socket} = state) do
+    Socket.send_event(socket, "ingress:all", "event:emit", message)
+
+    {:noreply, state}
+  end
+
+  def handle_info(_msg, state) do
+    {:noreply, state}
   end
 end
