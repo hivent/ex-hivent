@@ -8,6 +8,8 @@ config :hivent,
   partition_count: 4,
   client_id: "my_app"
 
+config :hivent, :channel_client, Hivent.Phoenix.ChannelClient
+
 config :logger,
   compile_time_purge_level: :info
 

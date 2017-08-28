@@ -5,6 +5,15 @@ config :hivent,
   partition_count: 1,
   client_id: "hivent_test"
 
+config :hivent, :channel_client, Hivent.Support.ChannelClient
+
+config :hivent, :hivent_server, %{
+  host: "localhost",
+  port: 4000,
+  path: "/producer/websocket",
+  secure: false
+}
+
 config :logger,
   level: :error
 

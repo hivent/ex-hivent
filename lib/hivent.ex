@@ -3,25 +3,25 @@ defmodule Hivent do
   The main Hivent application. It starts both a Consumer and an Emitter process.
   """
   use Application
-  alias Hivent.Emitter
+  alias Hivent.{Config, Emitter}
 
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
+    server_config = Config.get(:hivent, :hivent_server)
+
     children = [
       worker(Emitter, [[
-        host: "localhost",
-        port: 4000,
-        path: "/producer/websocket",
-        client_id: "a_client"
+        host: server_config[:host],
+        port: server_config[:port],
+        path: server_config[:path],
+        secure: server_config[:secure],
+        client_id: Config.get(:hivent, :client_id)
       ]])
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Hivent)
   end
 
-  def emit(name, payload, options) do
-    Process.whereis(Hivent.Emitter)
-    |> Hivent.Emitter.emit(name, payload, options)
-  end
+  def emit(name, payload, options), do: Emitter.emit(name, payload, options)
 end
