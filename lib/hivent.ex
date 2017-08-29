@@ -10,6 +10,8 @@ defmodule Hivent do
 
     server_config = Config.get(:hivent, :hivent_server)
 
+    IO.puts "starting application"
+
     children = [
       worker(Emitter, [[
         host: server_config[:host],

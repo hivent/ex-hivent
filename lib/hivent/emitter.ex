@@ -69,7 +69,7 @@ defmodule Hivent.Emitter do
 
   # Server Callbacks
   def init(%{host: host, path: path, port: port, secure: secure, client_id: client_id}) do
-    {:ok, pid} = @channel_client.start_link
+    {:ok, pid} = @channel_client.start_link(name: :emitter)
 
     {:ok, socket} = @channel_client.connect(pid,
       host: host,

@@ -10,8 +10,8 @@ defmodule Hivent.Support.ChannelClient do
   end
 
   # Client API
-  def start_link do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, [], opts)
   end
 
   def connect(server, options) do
@@ -38,12 +38,20 @@ defmodule Hivent.Support.ChannelClient do
     {:ok, channel}
   end
 
+  def leave(%Channel{} = channel) do
+    GenServer.cast(channel.socket.server, {:leave, channel})
+  end
+
   def push(channel, event, payload) do
-    GenServer.cast(channel.socket.server, {:emit, event, payload})
+    GenServer.cast(channel.socket.server, {:push, event, payload})
   end
 
   def messages(server) do
     GenServer.call(server, :messages)
+  end
+
+  def quarantined(server) do
+    GenServer.call(server, :quarantined)
   end
 
   def connected(server) do
@@ -54,9 +62,13 @@ defmodule Hivent.Support.ChannelClient do
     GenServer.call(server, :joined)
   end
 
+  def reset(server) do
+    GenServer.cast(server, :reset)
+  end
+
   # Server API
   def init(_state) do
-    {:ok, %{connected: [], joined: [], messages: []}}
+    {:ok, initial_state()}
   end
 
   def handle_cast({:connect, socket}, state) do
@@ -65,18 +77,34 @@ defmodule Hivent.Support.ChannelClient do
   def handle_cast({:join, channel}, state) do
     {:noreply, %{state | joined: state.joined ++ [channel]}}
   end
-  def handle_cast({:emit, "event:emit", event}, state) do
+  def handle_cast({:leave, channel}, state) do
+    {:noreply, %{state | joined: state.joined -- [channel]}}
+  end
+  def handle_cast({:push, "event:emit", event}, state) do
     {:noreply, %{state | messages: state.messages ++ [event]}}
+  end
+  def handle_cast({:push, "event:quarantine", {event, queue}}, state) do
+    {:noreply, %{state | quarantined: state.quarantined ++ [{event, queue}]}}
+  end
+  def handle_cast(:reset, _state) do
+    {:noreply, initial_state()}
   end
 
   def handle_call(:messages, _from, state) do
     {:reply, state.messages, state}
+  end
+  def handle_call(:quarantined, _from, state) do
+    {:reply, state.quarantined, state}
   end
   def handle_call(:connected, _from, state) do
     {:reply, state.connected, state}
   end
   def handle_call(:joined, _from, state) do
     {:reply, state.joined, state}
+  end
+
+  defp initial_state do
+    %{connected: [], joined: [], messages: [], quarantined: []}
   end
 
 end
