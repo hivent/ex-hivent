@@ -10,13 +10,11 @@ defmodule Hivent do
 
     server_config = Config.get(:hivent, :hivent_server)
 
-    IO.puts "starting application"
-
     children = [
       worker(Emitter, [[
         host: server_config[:host],
         port: server_config[:port],
-        path: server_config[:path],
+        path: "/producer/websocket",
         secure: server_config[:secure],
         client_id: Config.get(:hivent, :client_id)
       ]])

@@ -47,9 +47,11 @@ defmodule Hivent.Consumer do
 
         {:ok, socket} = @channel_client.connect(pid,
           host: server_config[:host],
-          path: server_config[:path],
+          path: "/consumer/websocket",
           port: server_config[:port],
-          params: name,
+          params: %{
+            name: name
+          },
           secure: server_config[:secure]
         )
         channel = @channel_client.channel(socket, name, %{partition_count: @partition_count})
