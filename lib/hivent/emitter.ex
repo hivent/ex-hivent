@@ -12,7 +12,7 @@ defmodule Hivent.Emitter do
 
   @type event :: %Event{}
 
-  @channel_client Application.get_env(:hivent, :channel_client)
+  @channel_client Application.get_env(:hivent, :channel_client, Hivent.Phoenix.ChannelClient)
 
   # Client API
   def start_link([host: host, port: port, path: path, secure: secure, client_id: client_id]) do
