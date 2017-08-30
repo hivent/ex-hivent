@@ -25,8 +25,6 @@ defmodule Hivent.ConsumerTest do
           {:error, "something went wrong"}
       end
     end
-
-    def handle_info(_, state), do: {:noreply, state}
   end
 
   setup do
@@ -38,31 +36,35 @@ defmodule Hivent.ConsumerTest do
   test "receives events" do
     {:ok, consumer} = TestConsumer.start_link()
 
-    event = %Hivent.Event{
-      payload: %{"response" => "ok"},
-      meta: %Hivent.Event.Meta{
-        name: "some:event",
-        version: 1
+    event = %{
+      "payload" => %{"response" => "ok"},
+      "meta" => %{
+        "name" => "some:event",
+        "version" => 1
       }
     }
 
-    send(consumer, {"event:received", %{event: event, queue: "a_queue"}})
+    decoded_event = Poison.encode!(event) |> Poison.decode!(as: %Hivent.Event{})
 
-    assert_receive {:ok, ^event}
+    send(consumer, {"event:received", %{"event" => event, "queue" => "a_queue"}})
+
+    assert_receive {:ok, ^decoded_event}
   end
 
   test "quarantines events that are not processed correctly" do
     {:ok, consumer} = TestConsumer.start_link()
 
-    event = %Hivent.Event{
-      payload: %{"response" => "error"},
-      meta: %Hivent.Event.Meta{
-        name: "some:event",
-        version: 1
+    event = %{
+      "payload" => %{"response" => "error"},
+      "meta" => %{
+        "name" => "some:event",
+        "version" => 1
       }
     }
 
-    send(consumer, {"event:received", %{event: event, queue: "a_queue"}})
+    decoded_event = Poison.encode!(event) |> Poison.decode!(as: %Hivent.Event{})
+
+    send(consumer, {"event:received", %{"event" => event, "queue" => "a_queue"}})
 
     :timer.sleep(10)
 
@@ -70,7 +72,7 @@ defmodule Hivent.ConsumerTest do
     |> @channel_client.quarantined
     |> hd
 
-    assert quarantined_event == event
+    assert quarantined_event == decoded_event
     assert queue == "a_queue"
   end
 end

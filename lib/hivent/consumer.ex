@@ -54,7 +54,7 @@ defmodule Hivent.Consumer do
           },
           secure: server_config[:secure]
         )
-        channel = @channel_client.channel(socket, name, %{partition_count: @partition_count})
+        channel = @channel_client.channel(socket, "event:#{topic}", %{partition_count: @partition_count})
 
         {:ok, _} = @channel_client.join(channel)
 
@@ -63,7 +63,9 @@ defmodule Hivent.Consumer do
         {:ok, %{socket: socket, channel: channel, topic: topic}}
       end
 
-      def handle_info({"event:received", %{event: event, queue: queue}}, %{channel: channel} = state) do
+      def handle_info({"event:received", %{"event" => event, "queue" => queue}}, %{channel: channel} = state) do
+        event = Poison.encode!(event) |> Poison.decode!(as: %Event{})
+
         case process(event) do
           {:error, _reason} ->
             Logger.info "Error processing event #{event.meta.uuid}"
@@ -75,6 +77,7 @@ defmodule Hivent.Consumer do
 
         {:noreply, state}
       end
+      def handle_info(evt, state), do: {:noreply, state}
 
       def terminate(_reason, %{channel: channel}) do
         @channel_client.leave(channel)
@@ -86,7 +89,7 @@ defmodule Hivent.Consumer do
       defp server_config, do: Config.get(:hivent, :hivent_server)
 
       defp quarantine(channel, {event, queue}) do
-        @channel_client.push(channel, "event:quarantine", {event, queue})
+        @channel_client.push(channel, "event:quarantine", %{event: event, queue: queue})
       end
     end
   end

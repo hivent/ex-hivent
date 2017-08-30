@@ -83,7 +83,7 @@ defmodule Hivent.Support.ChannelClient do
   def handle_cast({:push, "event:emit", event}, state) do
     {:noreply, %{state | messages: state.messages ++ [event]}}
   end
-  def handle_cast({:push, "event:quarantine", {event, queue}}, state) do
+  def handle_cast({:push, "event:quarantine", %{event: event, queue: queue}}, state) do
     {:noreply, %{state | quarantined: state.quarantined ++ [{event, queue}]}}
   end
   def handle_cast(:reset, _state) do
