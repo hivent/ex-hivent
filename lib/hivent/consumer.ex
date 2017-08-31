@@ -34,13 +34,14 @@ defmodule Hivent.Consumer do
 
       def start_link(otp_opts \\ []) do
         GenServer.start_link(__MODULE__, %{
+          service: @service,
           topic: @topic,
           name: @name,
           partition_count: @partition_count
         }, otp_opts)
       end
 
-      def init(%{topic: topic, name: name, partition_count: partition_count}) do
+      def init(%{service: service, topic: topic, name: name, partition_count: partition_count}) do
         {:ok, pid} = @channel_client.start_link(name: String.to_atom("consumer_socket_#{name}"))
 
         server_config = server_config()
@@ -50,6 +51,7 @@ defmodule Hivent.Consumer do
           path: "/consumer/websocket",
           port: server_config[:port],
           params: %{
+            service: service,
             name: name
           },
           secure: server_config[:secure]
@@ -60,7 +62,7 @@ defmodule Hivent.Consumer do
 
         Logger.info "Initialized Hivent.Consumer #{name}"
 
-        {:ok, %{socket: socket, channel: channel, topic: topic}}
+        {:ok, %{socket: socket, channel: channel, topic: topic, service: service}}
       end
 
       def handle_info({"event:received", %{"event" => event, "queue" => queue}}, %{channel: channel} = state) do

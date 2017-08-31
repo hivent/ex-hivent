@@ -10,7 +10,6 @@ config :hivent, :channel_client, Hivent.Support.ChannelClient
 config :hivent, :hivent_server, %{
   host: "localhost",
   port: 4000,
-  path: "/producer/websocket",
   secure: false
 }
 

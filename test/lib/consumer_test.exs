@@ -7,6 +7,7 @@ defmodule Hivent.ConsumerTest do
   @channel_client Application.get_env(:hivent, :channel_client)
 
   defmodule TestConsumer do
+    @service "a_service"
     @topic "some:event"
     @name "test_consumer"
     @partition_count 2
@@ -31,6 +32,36 @@ defmodule Hivent.ConsumerTest do
     Process.register(self(), :sut)
 
     :ok
+  end
+
+  test "connects to a socket with server config" do
+    {:ok, _consumer} = TestConsumer.start_link()
+    channel_pid = String.to_atom("consumer_socket_test_consumer")
+    server_config = Config.get(:hivent, :hivent_server)
+    socket_config = @channel_client.connected(channel_pid) |> hd
+
+    assert socket_config.host == server_config[:host]
+    assert socket_config.port == server_config[:port]
+    assert socket_config.path == "/consumer/websocket"
+    assert socket_config.secure == server_config[:secure]
+  end
+
+  test "connects to a socket with service name and consumer name" do
+    {:ok, _consumer} = TestConsumer.start_link()
+    channel_pid = String.to_atom("consumer_socket_test_consumer")
+    socket_config = @channel_client.connected(channel_pid) |> hd
+
+    assert socket_config.params.name == "test_consumer"
+    assert socket_config.params.service == "a_service"
+  end
+
+  test "joins a channel on a topic named after the event with partition count" do
+    {:ok, _consumer} = TestConsumer.start_link()
+    channel_pid = String.to_atom("consumer_socket_test_consumer")
+    channel_config = @channel_client.joined(channel_pid) |> hd
+
+    assert channel_config.name == "event:some:event"
+    assert channel_config.args.partition_count == 2
   end
 
   test "receives events" do
