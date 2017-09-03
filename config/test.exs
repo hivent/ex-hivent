@@ -2,7 +2,8 @@ use Mix.Config
 
 config :hivent,
   endpoint: {:system, "HIVENT_URL"},
-  partition_count: 1,
+  max_reconnect_tries: 3,
+  reconnect_backoff_time: 10,
   client_id: "hivent_test"
 
 config :hivent, :channel_client, Hivent.Support.ChannelClient

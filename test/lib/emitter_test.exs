@@ -1,9 +1,13 @@
 defmodule Hivent.EmitterTest do
   use ExUnit.Case
+  import TimeHelper
 
   doctest Hivent.Emitter
 
   @channel_client Application.get_env(:hivent, :channel_client)
+
+  @reconnect_backoff_time Application.get_env(:hivent, :reconnect_backoff_time)
+  @max_reconnect_tries Application.get_env(:hivent, :max_reconnect_tries)
 
   alias Hivent.{Config, Emitter}
 
@@ -12,7 +16,7 @@ defmodule Hivent.EmitterTest do
 
     server_config = Config.get(:hivent, :hivent_server)
 
-    {:ok, _pid} = Emitter.start_link([
+    {:ok, pid} = Emitter.start_link([
       host: server_config[:host],
       port: server_config[:port],
       path: server_config[:path],
@@ -20,7 +24,10 @@ defmodule Hivent.EmitterTest do
       client_id: Config.get(:hivent, :client_id)
     ])
 
-    :ok
+    # First connect call is async
+    :timer.sleep(25)
+
+    {:ok, %{pid: pid}}
   end
 
   test "connects to the socket" do
@@ -53,5 +60,27 @@ defmodule Hivent.EmitterTest do
     assert event.meta.version == 1
     assert event.meta.cid == "a_cid"
     assert event.meta.key == "a_key" |> :erlang.crc32
+  end
+
+  test "reconnects to the socket with exponential backoff when the connection is closed" do
+    reconnect_after = :erlang.round(@reconnect_backoff_time * :math.pow(2, @max_reconnect_tries - 2))
+
+    @channel_client.crash(:emitter, reconnect_after)
+
+    wait_until fn ->
+      assert (@channel_client.connected(:emitter) |> length) > 0
+    end
+  end
+
+  test "stops reconnecting to the socket after a maximum number of attempts have been reached", %{pid: pid} do
+    Process.flag :trap_exit, true
+
+    reconnect_after = :erlang.round(@reconnect_backoff_time * :math.pow(2, @max_reconnect_tries + 2))
+
+    @channel_client.crash(:emitter, reconnect_after)
+
+    wait_until  fn ->
+      assert_receive {:EXIT, ^pid, {:bad_return_value, {:error, "could not connect to socket"}}}
+    end
   end
 end
