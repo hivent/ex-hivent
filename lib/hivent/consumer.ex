@@ -27,44 +27,39 @@ defmodule Hivent.Consumer do
       @behaviour Consumer
 
       @channel_client Application.get_env(:hivent, :channel_client, Hivent.Phoenix.ChannelClient)
+      @reconnect_backoff Application.get_env(:hivent, :reconnect_backoff_time, 1000)
+      @max_reconnect_tries Application.get_env(:hivent, :max_reconnect_tries, 3)
 
       alias Hivent.Config
 
       require Logger
 
+      # Client API
       def start_link(otp_opts \\ []) do
         GenServer.start_link(__MODULE__, %{
           service: @service,
           topic: @topic,
           name: @name,
-          partition_count: @partition_count
+          partition_count: @partition_count,
+          reconnect_timer: 0
         }, otp_opts)
       end
 
-      def init(%{service: service, topic: topic, name: name, partition_count: partition_count}) do
+      # Server callbacks
+      def init(%{service: service, topic: topic, name: name, partition_count: partition_count} = config) do
         {:ok, pid} = @channel_client.start_link(name: String.to_atom("consumer_socket_#{name}"))
 
-        server_config = server_config()
-
-        {:ok, socket} = @channel_client.connect(pid,
-          host: server_config[:host],
-          path: "/consumer/websocket",
-          port: server_config[:port],
-          params: %{
-            service: service,
-            name: name
-          },
-          secure: server_config[:secure]
-        )
-        channel = @channel_client.channel(socket, "event:#{topic}", %{partition_count: @partition_count})
-
-        {:ok, _} = @channel_client.join(channel)
+        GenServer.cast(self(), :connect)
 
         Logger.info "Initialized Hivent.Consumer #{name}"
 
-        {:ok, %{socket: socket, channel: channel, topic: topic, service: service}}
+        {:ok, %{socket: nil, channel: nil, config: config, pid: pid, reconnect_tries: 0}}
       end
 
+      def handle_cast(:connect, state), do: try_connect(state)
+
+      def handle_info(:connect, state), do: try_connect(state)
+      def handle_info(:close, state), do: try_connect(state)
       def handle_info({"event:received", %{"event" => event, "queue" => queue}}, %{channel: channel} = state) do
         event = Poison.encode!(event) |> Poison.decode!(as: %Event{})
 
@@ -79,19 +74,68 @@ defmodule Hivent.Consumer do
 
         {:noreply, state}
       end
-      def handle_info(evt, state), do: {:noreply, state}
+      def handle_info(_, state), do: {:noreply, state}
 
-      def terminate(_reason, %{channel: channel}) do
+      def terminate(_reason, %{channel: channel}) when not is_nil(channel) do
         @channel_client.leave(channel)
       end
+      def terminate(_reason, _state), do: :ok
 
       def process(_event), do: :ok
       defoverridable process: 1
 
-      defp server_config, do: Config.get(:hivent, :hivent_server)
-
       defp quarantine(channel, {event, queue}) do
         @channel_client.push(channel, "event:quarantine", %{event: event, queue: queue})
+      end
+
+      defp try_connect(%{config: config} = state) do
+        case do_connect(state) do
+          {:ok, socket} ->
+            channel = @channel_client.channel(socket, "event:#{config[:topic]}", %{partition_count: config[:partition_count]})
+
+            {:ok, _} = @channel_client.join(channel)
+
+            {:noreply, %{state | socket: socket, channel: channel}}
+          {:error, _reason} ->
+            new_reconnect_timer = config[:reconnect_timer] + @reconnect_backoff
+
+            cond do
+              state[:reconnect_tries] <= @max_reconnect_tries ->
+                Logger.info("Trying to reconnect to socket, #{@max_reconnect_tries - state[:reconnect_tries] + 1} tries left")
+                Process.send_after(self(), :close, new_reconnect_timer)
+
+                {:noreply, %{state |
+                  channel: nil,
+                  config: %{config |
+                    reconnect_timer: new_reconnect_timer,
+                  },
+                  reconnect_tries: state[:reconnect_tries] + 1
+                }}
+              true ->
+                {:error, "could not connect to socket"}
+            end
+        end
+      end
+
+      defp do_connect(%{socket: nil, config: config, pid: pid}) do
+        server_config = Config.get(:hivent, :hivent_server)
+
+        @channel_client.connect(pid,
+          host: server_config[:host],
+          path: "/consumer/websocket",
+          port: server_config[:port],
+          params: %{
+            service: config[:service],
+            name: config[:name]
+          },
+          secure: server_config[:secure]
+        )
+      end
+      defp do_connect(%{socket: socket}) do
+        case @channel_client.reconnect(socket) do
+          :ok -> {:ok, socket}
+          result -> result
+        end
       end
     end
   end
