@@ -55,8 +55,6 @@ defmodule Hivent.Emitter do
   end
 
   defp build_message(name, payload, cid, version, key) do
-    key = (key || inspect(payload)) |> :erlang.crc32
-
     %Event{
       name: name,
       payload: payload,

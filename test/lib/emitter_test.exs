@@ -59,7 +59,7 @@ defmodule Hivent.EmitterTest do
     assert event.payload == %{foo: "bar"}
     assert event.meta.version == 1
     assert event.meta.cid == "a_cid"
-    assert event.meta.key == "a_key" |> :erlang.crc32
+    assert event.meta.key == "a_key"
   end
 
   test "reconnects to the socket with exponential backoff when the connection is closed" do
