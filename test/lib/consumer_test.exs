@@ -13,7 +13,6 @@ defmodule Hivent.ConsumerTest do
   defmodule TestConsumer do
     @service "a_service"
     @topic "some:event"
-    @name "test_consumer"
     @partition_count 2
 
     @channel_client Application.get_env(:hivent, :channel_client)
@@ -35,8 +34,9 @@ defmodule Hivent.ConsumerTest do
   setup do
     Process.register(self(), :sut)
 
-    consumer_name = String.to_atom("consumer_socket_test_consumer")
+    {:ok, hostname} = :inet.gethostname
     {:ok, pid} = TestConsumer.start_link()
+    consumer_name = String.to_atom("consumer_socket_#{hostname}:#{inspect pid}")
 
     # Initial setup is async, so wait a bit for initial connect and join
     :timer.sleep(50)
@@ -54,10 +54,12 @@ defmodule Hivent.ConsumerTest do
     assert socket_config.secure == server_config[:secure]
   end
 
-  test "connects to a socket with service name and consumer name", %{consumer_name: consumer_name} do
+  test "connects to a socket with service name and consumer name", %{pid: pid, consumer_name: consumer_name} do
     socket_config = @channel_client.connected(consumer_name) |> hd
 
-    assert socket_config.params.name == "test_consumer"
+    {:ok, hostname} = :inet.gethostname
+
+    assert socket_config.params.name == "#{hostname}:#{inspect pid}"
     assert socket_config.params.service == "a_service"
   end
 

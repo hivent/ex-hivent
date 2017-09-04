@@ -2,7 +2,6 @@ defmodule Hivent.Consumer do
   @moduledoc """
   The Hivent Consumer. Use module options to configure your consumer:
     - @topic The topic you want to consume, ie. "some:event"
-    - @name The name of your consumer
     - @partition_count The number of partitions data will be partitioned in
   Implement the Consumer behaviour by overriding process/1. The argument is the
   %Hivent.Event{} consumed. Use return values to inform Hivent if processing the
@@ -39,14 +38,17 @@ defmodule Hivent.Consumer do
         GenServer.start_link(__MODULE__, %{
           service: @service,
           topic: @topic,
-          name: @name,
           partition_count: @partition_count,
+          name: nil,
           reconnect_timer: 0
         }, otp_opts)
       end
 
       # Server callbacks
-      def init(%{service: service, topic: topic, name: name, partition_count: partition_count} = config) do
+      def init(%{service: service, topic: topic, partition_count: partition_count} = config) do
+        config = %{config | name: name()}
+        name = config[:name]
+
         {:ok, pid} = @channel_client.start_link(name: String.to_atom("consumer_socket_#{name}"))
 
         GenServer.cast(self(), :connect)
@@ -83,6 +85,12 @@ defmodule Hivent.Consumer do
 
       def process(_event), do: :ok
       defoverridable process: 1
+
+      defp name do
+        {:ok, hostname} = :inet.gethostname
+
+        "#{hostname}:#{inspect self()}"
+      end
 
       defp quarantine(channel, {event, queue}) do
         @channel_client.push(channel, "event:quarantine", %{event: event, queue: queue})
