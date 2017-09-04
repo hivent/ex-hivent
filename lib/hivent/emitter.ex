@@ -9,7 +9,7 @@ defmodule Hivent.Emitter do
   use GenServer
   require Logger
 
-  alias Hivent.Event
+  alias Hivent.{Config, Event}
   alias Event.Meta
 
   @type event :: %Event{}
@@ -47,26 +47,27 @@ defmodule Hivent.Emitter do
   """
   @spec emit(term, map, map) :: event
   def emit(name, payload, %{version: version} = options) when is_integer(version) do
-    message = build_message(name, payload, options[:cid], version, options[:key])
+    message = build_message(name, payload, options)
 
     GenServer.cast(__MODULE__, {:emit, message})
 
     {:ok, message}
   end
 
-  defp build_message(name, payload, cid, version, key) do
+  defp build_message(name, payload, options) do
     %Event{
-      name: name,
+      name:    name,
       payload: payload,
-      meta:    meta_data(cid, version, key)
+      meta:    meta_data(options)
     }
   end
 
-  defp meta_data(cid, version, key) do
+  defp meta_data(options) do
     %Meta{
-      version: version,
-      cid:     cid,
-      key:     key
+      version:  options[:version],
+      cid:      options[:cid],
+      key:      options[:key],
+      producer: Config.get(:hivent, :client_id)
     }
   end
 
