@@ -3,8 +3,8 @@ defmodule Hivent.Mixfile do
 
   def project do
     [app: :hivent,
-     version: "2.2.0",
-     elixir: "~> 1.4",
+     version: "3.0.0",
+     elixir: "~> 1.5",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      description: description(),
@@ -45,7 +45,7 @@ defmodule Hivent.Mixfile do
 
   defp description do
     """
-    An event stream that aggregates facts about your application.
+    Hivent is a messaging platform that makes it easy to build Reactive Microservice systems.
     """
   end
 
@@ -54,8 +54,8 @@ defmodule Hivent.Mixfile do
      name: :hivent,
      maintainers: ["Bruno Abrantes"],
      licenses: ["MIT"],
-     links: %{"GitHub" => "https://github.com/inf0rmer/ex-hivent",
-              "Docs" => "https://github.com/inf0rmer/ex-hivent"}]
+     links: %{"GitHub" => "https://github.com/hivent/ex-hivent",
+              "Docs" => "https://github.com/hivent/ex-hivent"}]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
