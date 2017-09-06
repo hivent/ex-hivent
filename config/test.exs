@@ -8,10 +8,11 @@ config :hivent,
 
 config :hivent, :channel_client, Hivent.Support.ChannelClient
 
-config :hivent, :hivent_server, %{
+config :hivent, :server, %{
   host: "localhost",
   port: 4000,
-  secure: false
+  secure: false,
+  api_key: "secret_key"
 }
 
 config :logger,

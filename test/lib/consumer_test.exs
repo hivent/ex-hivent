@@ -45,13 +45,14 @@ defmodule Hivent.ConsumerTest do
   end
 
   test "connects to a socket with server config", %{consumer_name: consumer_name} do
-    server_config = Config.get(:hivent, :hivent_server)
+    server_config = Config.get(:hivent, :server)
     socket_config = @channel_client.connected(consumer_name) |> hd
 
     assert socket_config.host == server_config[:host]
     assert socket_config.port == server_config[:port]
     assert socket_config.path == "/consumer/websocket"
     assert socket_config.secure == server_config[:secure]
+    assert socket_config.params[:api_key] == server_config[:api_key]
   end
 
   test "connects to a socket with service name and consumer name", %{pid: pid, consumer_name: consumer_name} do

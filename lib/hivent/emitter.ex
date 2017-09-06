@@ -19,13 +19,14 @@ defmodule Hivent.Emitter do
   @max_reconnect_tries Application.get_env(:hivent, :max_reconnect_tries, 3)
 
   # Client API
-  def start_link([host: host, port: port, path: path, secure: secure, client_id: client_id]) do
+  def start_link([host: host, port: port, path: path, secure: secure, client_id: client_id, api_key: api_key]) do
     GenServer.start_link(__MODULE__, %{
       host: host,
       path: path,
       port: port,
       secure: secure,
       client_id: client_id,
+      api_key: api_key,
       reconnect_timer: 0
     }, name: __MODULE__)
   end
@@ -129,7 +130,10 @@ defmodule Hivent.Emitter do
       host: config[:host],
       path: config[:path],
       port: config[:port],
-      params: %{client_id: config[:client_id]},
+      params: %{
+        client_id: config[:client_id],
+        api_key:   config[:api_key]
+      },
       secure: config[:secure]
     )
   end

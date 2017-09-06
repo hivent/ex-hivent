@@ -14,14 +14,15 @@ defmodule Hivent.EmitterTest do
   setup do
     @channel_client.reset(:emitter)
 
-    server_config = Config.get(:hivent, :hivent_server)
+    server_config = Config.get(:hivent, :server)
 
     {:ok, pid} = Emitter.start_link([
       host: server_config[:host],
       port: server_config[:port],
       path: server_config[:path],
       secure: server_config[:secure],
-      client_id: Config.get(:hivent, :client_id)
+      client_id: Config.get(:hivent, :client_id),
+      api_key: server_config[:api_key]
     ])
 
     # First connect call is async
@@ -33,13 +34,14 @@ defmodule Hivent.EmitterTest do
   test "connects to the socket" do
     socket = @channel_client.connected(:emitter) |> hd
 
-    server_config = Config.get(:hivent, :hivent_server)
+    server_config = Config.get(:hivent, :server)
 
     assert socket.host == server_config[:host]
     assert socket.port == server_config[:port]
     assert socket.path == server_config[:path]
     assert socket.secure == server_config[:secure]
     assert socket.params[:client_id] == Config.get(:hivent, :client_id)
+    assert socket.params[:api_key] == server_config[:api_key]
   end
 
   test "joins the \"ingress:all\" channel" do

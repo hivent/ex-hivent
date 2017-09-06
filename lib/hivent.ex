@@ -8,7 +8,7 @@ defmodule Hivent do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
-    server_config = Config.get(:hivent, :hivent_server)
+    server_config = Config.get(:hivent, :server)
 
     children = [
       worker(Emitter, [[
@@ -16,7 +16,8 @@ defmodule Hivent do
         port: server_config[:port],
         path: "/producer/websocket",
         secure: server_config[:secure],
-        client_id: Config.get(:hivent, :client_id)
+        client_id: Config.get(:hivent, :client_id),
+        api_key: server_config[:api_key]
       ]])
     ]
 

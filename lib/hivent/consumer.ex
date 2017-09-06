@@ -126,7 +126,7 @@ defmodule Hivent.Consumer do
       end
 
       defp do_connect(%{socket: nil, config: config, pid: pid}) do
-        server_config = Config.get(:hivent, :hivent_server)
+        server_config = Config.get(:hivent, :server)
 
         @channel_client.connect(pid,
           host: server_config[:host],
@@ -134,7 +134,8 @@ defmodule Hivent.Consumer do
           port: server_config[:port],
           params: %{
             service: config[:service],
-            name: config[:name]
+            name:    config[:name],
+            api_key: server_config[:api_key]
           },
           secure: server_config[:secure]
         )
