@@ -5,7 +5,3 @@ elixir:
 
 services:
   - redis
-
-env:
-  matrix:
-    - HIVENT_URL=redis://localhost:6379

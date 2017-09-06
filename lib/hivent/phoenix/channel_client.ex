@@ -1,6 +1,7 @@
 defmodule Hivent.Phoenix.ChannelClient do
-  @moduledoc """
-  Phoenix Channels Client
+  @moduledoc false
+
+  @doc """
   ### Example
   ```
   {:ok, pid} = ChannelClient.start_link()
@@ -32,14 +33,17 @@ defmodule Hivent.Phoenix.ChannelClient do
   use GenServer
 
   defmodule Channel do
+    @moduledoc false
     defstruct [:socket, :topic, :params]
   end
 
   defmodule Socket do
+    @moduledoc false
     defstruct [:server_name]
   end
 
   defmodule Subscription do
+    @moduledoc false
     defstruct [:name, :pid, :matcher, :mapper]
   end
 

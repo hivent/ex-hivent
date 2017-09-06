@@ -1,19 +1,17 @@
 use Mix.Config
 
 config :hivent,
-  endpoint: {:system, "HIVENT_URL"},
   max_reconnect_tries: 3,
   reconnect_backoff_time: 10,
-  client_id: "hivent_test"
+  client_id: "hivent_test",
+  server: %{
+    host: "localhost",
+    port: 4000,
+    secure: false,
+    api_key: "secret_key"
+  }
 
 config :hivent, :channel_client, Hivent.Support.ChannelClient
-
-config :hivent, :server, %{
-  host: "localhost",
-  port: 4000,
-  secure: false,
-  api_key: "secret_key"
-}
 
 config :logger,
   level: :error

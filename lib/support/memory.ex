@@ -132,7 +132,7 @@ defmodule Hivent.Memory do
   """
   def empty?, do: Enum.empty?(all)
 
-  @moduledoc """
+  @doc """
   Checks if an event with a given payload and/or metadata exists in the store.
   Supports partial matching for both payload and metadata.
   """

@@ -2,8 +2,6 @@ defmodule Hivent.Emitter do
   @moduledoc """
   The Hivent Emitter module. It emits signals into a Hivent Server instance
   through a Websocket.
-
-  {:ok, %Hivent.Event{}} = Hivent.Emitter.emit("my:event", %{foo: "bar", version: 1})
   """
 
   use GenServer
@@ -12,13 +10,29 @@ defmodule Hivent.Emitter do
   alias Hivent.{Config, Event}
   alias Event.Meta
 
+  @typedoc "A Hivent Event struct"
   @type event :: %Event{}
+
+  @typedoc "Return values of `start*` functions"
+  @type on_start :: {:ok, pid} | :ignore | {:error, {:already_started, pid} | term}
 
   @channel_client Application.get_env(:hivent, :channel_client, Hivent.Phoenix.ChannelClient)
   @reconnect_backoff Application.get_env(:hivent, :reconnect_backoff_time, 1000)
   @max_reconnect_tries Application.get_env(:hivent, :max_reconnect_tries, 3)
 
   # Client API
+
+  @doc """
+  Starts the Emitter process. All options are required.
+  ### Options
+  * `:host`
+  * `:port`
+  * `:path`
+  * `:secure`
+  * `:client_id`
+  * `:api_key`
+  """
+  @spec start_link(map) :: on_start
   def start_link([host: host, port: port, path: path, secure: secure, client_id: client_id, api_key: api_key]) do
     GenServer.start_link(__MODULE__, %{
       host: host,
@@ -36,7 +50,7 @@ defmodule Hivent.Emitter do
   ### Options
   * `:version`
   * `:cid` optional
-  * `:key` optional, "/" by default
+  * `:key` optional, will be derived from `payload` by default. It controls which partition the event is stored in.
   ### Example
   ```
   Emitter.emit(
