@@ -1,94 +1,89 @@
-defmodule HiventEmitterTest do
+defmodule Hivent.EmitterTest do
   use ExUnit.Case
-  use Timex
+  import TimeHelper
+
   doctest Hivent.Emitter
 
-  @signal "my_topic"
-  @service_name "a_service"
-  @version 1
-  @cid "91dn1dn982d8921dasdads"
+  @channel_client Application.get_env(:hivent, :channel_client)
+
+  @reconnect_backoff_time Application.get_env(:hivent, :reconnect_backoff_time)
+  @max_reconnect_tries Application.get_env(:hivent, :max_reconnect_tries)
+
+  alias Hivent.{Config, Emitter}
 
   setup do
-    redis = Process.whereis(Hivent.Redis)
+    @channel_client.reset(:emitter)
 
-    redis |> Exredis.Api.flushall
+    server_config = Config.get(:hivent, :server)
 
-    partition_count = Hivent.Config.get(:hivent, :partition_count)
+    {:ok, pid} = Emitter.start_link([
+      host: server_config[:host],
+      port: server_config[:port],
+      path: server_config[:path],
+      secure: server_config[:secure],
+      client_id: Config.get(:hivent, :client_id),
+      api_key: server_config[:api_key]
+    ])
 
-    created_at = Timex.now
+    # First connect call is async
+    :timer.sleep(25)
 
-    redis |> Exredis.Api.sadd(@signal, @service_name)
-    redis |> Exredis.Api.set("#{@service_name}:partition_count", partition_count)
-
-    Hivent.Emitter.emit(redis, @signal, "foobar",
-      %{version: @version, cid: "91dn1dn982d8921dasdads", key: 12345},
-      created_at
-    )
-
-    item = redis
-      |> Exredis.Api.lindex("#{@service_name}:0", -1)
-      |> Poison.Parser.parse!(keys: :atoms)
-
-    [redis: redis, item: item, created_at: created_at]
+    {:ok, %{pid: pid}}
   end
 
-  test "emitting an event creates an event with the given payload", %{item: item} do
-    assert item.payload == "foobar"
+  test "connects to the socket" do
+    socket = @channel_client.connected(:emitter) |> hd
+
+    server_config = Config.get(:hivent, :server)
+
+    assert socket.host == server_config[:host]
+    assert socket.port == server_config[:port]
+    assert socket.path == server_config[:path]
+    assert socket.secure == server_config[:secure]
+    assert socket.params[:client_id] == Config.get(:hivent, :client_id)
+    assert socket.params[:api_key] == server_config[:api_key]
   end
 
-  test "emitting an event creates an event with the name of the used signal", %{item: item} do
-    assert item.meta.name == @signal
+  test "joins the \"ingress:all\" channel" do
+    channel = @channel_client.joined(:emitter) |> hd
+
+    assert channel.name == "ingress:all"
   end
 
-  test "emitting an event creates an event with the configured producer", %{item: item} do
-    assert item.meta.producer == Hivent.Config.get(:hivent, :client_id)
+  test "emit/3 sends an event through the socket" do
+    Emitter.emit("an:event", %{foo: "bar"}, %{version: 1, cid: "a_cid", key: "a_key"})
+
+    :timer.sleep(10)
+
+    event = @channel_client.messages(:emitter) |> hd
+
+    assert event.name == "an:event"
+    assert event.payload == %{foo: "bar"}
+    assert event.meta.version == 1
+    assert event.meta.cid == "a_cid"
+    assert event.meta.key == "a_key"
+    assert event.meta.producer == Config.get(:hivent, :client_id)
   end
 
-  test "emitting an event creates an event with the given version", %{item: item} do
-    assert item.meta.version == @version
+  test "reconnects to the socket with exponential backoff when the connection is closed" do
+    reconnect_after = :erlang.round(@reconnect_backoff_time * :math.pow(2, @max_reconnect_tries - 2))
+
+    @channel_client.crash(:emitter, reconnect_after)
+
+    wait_until fn ->
+      assert (@channel_client.connected(:emitter) |> length) > 0
+    end
   end
 
-  test "emitting an event creates an event with the given cid", %{item: item} do
-    assert item.meta.cid == @cid
-  end
+  test "stops reconnecting to the socket after a maximum number of attempts have been reached", %{pid: pid} do
+    Process.flag :trap_exit, true
 
-  test "emitting an event creates an event with a generated uuid", %{item: item} do
-    assert item.meta.uuid != nil
-  end
+    reconnect_after = :erlang.round(@reconnect_backoff_time * :math.pow(2, @max_reconnect_tries + 2))
 
-  test "emitting an event creates an event with the date of emission", %{item: item, created_at: original_created_at} do
-    created_at = Timex.parse!(item.meta.created_at, "{ISO:Extended:Z}")
+    @channel_client.crash(:emitter, reconnect_after)
 
-    assert created_at == original_created_at
-  end
-
-  test "emitting an event with no key derives one from the payload", %{redis: redis} do
-    redis |> Exredis.Api.set("#{@service_name}:partition_count", 2)
-
-    # Is guaranteed to hit partition 2 when used with :erlang.crc32
-    payload = %{foo: "bar"}
-
-    Hivent.Emitter.emit(redis, @signal, payload,
-      %{version: @version, cid: "91dn1dn982d8921dasdads"}
-    )
-
-    item = redis
-      |> Exredis.Api.lindex("#{@service_name}:1", -1)
-
-    assert item != :undefined
-  end
-
-  test "emitting an event with no cid generates one", %{redis: redis} do
-    Exredis.Api.del(redis, "#{@service_name}:0")
-
-    Hivent.Emitter.emit(redis, @signal, "foobar",
-      %{version: @version}
-    )
-
-    item = redis
-      |> Exredis.Api.lindex("#{@service_name}:0", -1)
-      |> Poison.Parser.parse!(keys: :atoms)
-
-    assert is_bitstring(item.meta.cid)
+    wait_until  fn ->
+      assert_receive {:EXIT, ^pid, {:bad_return_value, {:error, "could not connect to socket"}}}
+    end
   end
 end

@@ -1,8 +1,5 @@
 defmodule Hivent.Config do
-  @moduledoc """
-  This module handles fetching values from the config with some
-  additional niceties.
-  """
+  @moduledoc false
 
   @doc """
   Fetches a value from the config, or from the environment if {:system, "VAR"}

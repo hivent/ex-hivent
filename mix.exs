@@ -10,6 +10,7 @@ defmodule Hivent.Mixfile do
      description: description(),
      package: package(),
      deps: deps(),
+     aliases: aliases(),
      elixirc_paths: elixirc_paths(Mix.env)]
   end
 
@@ -18,9 +19,7 @@ defmodule Hivent.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     [mod: {Hivent, []},
-     applications: [:logger,
-                    :timex,
-                    :phoenix_pubsub]]
+     applications: [:logger]]
   end
 
   # Dependencies can be Hex packages:
@@ -33,14 +32,15 @@ defmodule Hivent.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:exredis, "~> 0.2"},
+    [{:poison, "~> 3.1"},
+     {:socket, "~> 0.3.11"},
+     {:msgpax, "~> 2.0"},
+     {:flow, "~> 0.12"},
      {:uuid, "~> 1.1"},
-     {:poison, "~> 3.1"},
      {:timex, "~> 3.1"},
-     {:gen_stage, "~> 0.12"},
-     {:phoenix_pubsub, "~> 1.0"},
      {:credo, "~> 0.8", only: [:dev, :test]},
-     {:ex_doc, ">= 0.0.0", only: :dev}]
+     {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+     {:test_server, path: "test/support/test_server", only: :test}]
   end
 
   defp description do
@@ -60,4 +60,10 @@ defmodule Hivent.Mixfile do
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp aliases do
+    [
+      "test": ["test --no-start"]
+    ]
+  end
 end
