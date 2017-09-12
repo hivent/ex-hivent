@@ -64,9 +64,7 @@ defmodule Hivent.Emitter do
   def emit(name, payload, %{version: version} = options) when is_integer(version) do
     message = build_message(name, payload, options)
 
-    GenServer.cast(__MODULE__, {:emit, message})
-
-    {:ok, message}
+    GenServer.call(__MODULE__, {:emit, message})
   end
 
   defp build_message(name, payload, options) do
@@ -95,11 +93,12 @@ defmodule Hivent.Emitter do
     {:ok, %{socket: nil, channel: nil, config: config, pid: pid, reconnect_tries: 0}}
   end
 
-  def handle_cast({:emit, message}, %{channel: channel} = state) do
-    @channel_client.push(channel, "event:emit", message)
+  def handle_call({:emit, message}, _from, %{channel: channel} = state) do
+    reply = @channel_client.push_and_receive(channel, "event:emit", message)
 
-    {:noreply, state}
+    {:reply, reply, state}
   end
+
   def handle_cast(:connect, state), do: try_connect(state)
 
   def handle_info(:connect, state), do: try_connect(state)
