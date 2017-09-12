@@ -53,8 +53,6 @@ defmodule Hivent.EmitterTest do
   test "emit/3 sends an event through the socket" do
     Emitter.emit("an:event", %{foo: "bar"}, %{version: 1, cid: "a_cid", key: "a_key"})
 
-    :timer.sleep(10)
-
     event = @channel_client.messages(:emitter) |> hd
 
     assert event.name == "an:event"
@@ -63,6 +61,14 @@ defmodule Hivent.EmitterTest do
     assert event.meta.cid == "a_cid"
     assert event.meta.key == "a_key"
     assert event.meta.producer == Config.get(:hivent, :client_id)
+  end
+
+  test "emit/3 replies with the published event" do
+    {:ok, reply} = Emitter.emit("an:event", %{foo: "bar"}, %{version: 1, cid: "a_cid", key: "a_key"})
+
+    event = @channel_client.messages(:emitter) |> hd
+
+    assert reply == event
   end
 
   test "reconnects to the socket with exponential backoff when the connection is closed" do

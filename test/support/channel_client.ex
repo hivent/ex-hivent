@@ -46,6 +46,10 @@ defmodule Hivent.Support.ChannelClient do
     GenServer.cast(channel.socket.server, {:push, event, payload})
   end
 
+  def push_and_receive(channel, event, payload) do
+    GenServer.call(channel.socket.server, {:push_and_receive, event, payload})
+  end
+
   def messages(server) do
     GenServer.call(server, :messages)
   end
@@ -76,10 +80,7 @@ defmodule Hivent.Support.ChannelClient do
   end
 
   def handle_cast({:push, "event:emit", event}, %{available: true} = state) do
-    {:noreply, %{state | messages: state.messages ++ [event]}}
-  end
-  def handle_cast({:push, "event:emit", _}, %{available: false} = state) do
-    {:noreply, state}
+    {:noreply, %{state | messages: state.messages ++ [build_event(event)]}}
   end
   def handle_cast({:push, "event:quarantine", %{event: event, queue: queue}}, %{available: true} = state) do
     {:noreply, %{state | quarantined: state.quarantined ++ [{event, queue}]}}
@@ -112,6 +113,10 @@ defmodule Hivent.Support.ChannelClient do
   def handle_call({:join, _}, _from, %{available: false} = state) do
     {:reply, {:error, "server is not available"}, state}
   end
+  def handle_call({:push_and_receive, "event:emit", event}, _from, state) do
+    message = build_event(event)
+    {:reply, {:ok, message}, %{state | messages: state.messages ++ [message]}}
+  end
   def handle_call({:leave, channel}, _from, state) do
     {:reply, :ok, %{state | joined: state.joined -- [channel]}}
   end
@@ -136,6 +141,16 @@ defmodule Hivent.Support.ChannelClient do
 
   defp initial_state do
     %{connected: [], joined: [], messages: [], quarantined: [], available: true}
+  end
+
+  defp build_event(event) do
+    meta = %{event.meta |
+      created_at: Timex.now |> DateTime.to_iso8601,
+      cid: event.meta.cid || UUID.uuid4,
+      uuid: UUID.uuid4
+    }
+
+    %{event | meta: meta}
   end
 
 end
