@@ -10,7 +10,7 @@ The official Elixir client for [Hivent](https://hivent.io).
 
   ```elixir
   def deps do
-    [{:hivent, "~> 0.1.0"}]
+    [{:hivent, "~> 3.0.0"}]
   end
   ```
 
